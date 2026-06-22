@@ -1,0 +1,78 @@
+.footer {
+  background-color: var(--color-beige);
+  padding: 4rem 0 2rem 0;
+  border-top: 1px solid rgba(0,0,0,0.05);
+}
+
+.top {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 4rem;
+  margin-bottom: 3rem;
+}
+
+.brand h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.brand p {
+  color: var(--color-text-light);
+  line-height: 1.6;
+  max-width: 400px;
+}
+
+.contact h3 {
+  font-size: 1.2rem;
+  color: var(--color-navy);
+  margin-bottom: 1.5rem;
+}
+
+.contactList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.contactList li {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  color: var(--color-text-light);
+  line-height: 1.5;
+}
+
+.icon {
+  color: var(--color-orange);
+  font-size: 1.25rem;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.contactList a {
+  color: var(--color-text-light);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.contactList a:hover {
+  color: var(--color-orange);
+}
+
+.bottom {
+  text-align: center;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(0,0,0,0.05);
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .top {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
