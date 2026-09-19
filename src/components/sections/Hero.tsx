@@ -89,9 +89,9 @@ export const Hero: React.FC = () => {
   // Dynamic cycling specializations
   const specializations = [
     'Deep Learning, LLMs & Autonomous Agents',
-    'High-Throughput Microservices & Distributed APIs',
+    'High-Throughput Microservices & Scalable APIs',
     'Client-Side 60fps Canvas & Media Engines',
-    'Bridging Research Models with Production Systems',
+    'Applied Neural Research to Production UX',
   ];
 
   useEffect(() => {
@@ -139,10 +139,10 @@ export const Hero: React.FC = () => {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
-            className="flex items-center gap-3 mb-6"
+            className="flex items-center gap-2 sm:gap-3 mb-6"
           >
-            <span className="w-8 h-[1px] bg-titanium-400/40" />
-            <span className="font-mono text-xs sm:text-sm tracking-widest text-titanium-400 uppercase font-medium">
+            <span className="w-4 sm:w-8 h-[1px] bg-titanium-400/40 shrink-0" />
+            <span className="font-mono text-[10.5px] sm:text-xs md:text-sm tracking-wider sm:tracking-widest text-titanium-400 uppercase font-medium whitespace-nowrap">
               <ScrambleText targetText="AI / MACHINE LEARNING / FULL-STACK" delay={200} />
             </span>
           </motion.div>
@@ -162,20 +162,20 @@ export const Hero: React.FC = () => {
             </motion.p>
 
             {/* Dynamic Morphing Specialization Cycler */}
-            <div className="h-9 flex items-center overflow-hidden">
+            <div className="min-h-[2rem] sm:h-9 flex items-center overflow-hidden">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeSpecIndex}
-                  initial={{ y: 22, opacity: 0, filter: 'blur(5px)' }}
+                  initial={{ y: 20, opacity: 0, filter: 'blur(4px)' }}
                   animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
-                  exit={{ y: -22, opacity: 0, filter: 'blur(5px)' }}
-                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex items-center gap-2.5 text-base sm:text-lg md:text-xl font-mono text-titanium-400"
+                  exit={{ y: -20, opacity: 0, filter: 'blur(4px)' }}
+                  transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex items-center gap-2 text-xs sm:text-base md:text-xl font-mono text-titanium-400"
                 >
-                  <span className="text-[11px] font-semibold text-emerald-400/90 px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
+                  <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-400/90 px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 shrink-0">
                     0{activeSpecIndex + 1}
                   </span>
-                  <span className="text-titanium-300">
+                  <span className="text-titanium-300 truncate sm:overflow-visible">
                     {specializations[activeSpecIndex]}
                   </span>
                 </motion.div>
