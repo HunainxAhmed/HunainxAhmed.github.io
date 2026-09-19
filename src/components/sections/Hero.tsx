@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowDown, Terminal, ArrowUpRight, FileDown, Flame, RotateCcw } from 'lucide-react';
+import { ArrowDown, Terminal, ArrowUpRight, FileDown, RotateCcw } from 'lucide-react';
 import { profileData } from '@/data/profile';
 import { MinecraftTorch } from '@/components/3d/MinecraftTorch';
+import { FireCanvas, BurningRect } from '@/components/3d/FireCanvas';
 
 // Scramble text effect on initial load for cybernetic/AI engineering feel
 const ScrambleText: React.FC<{ targetText: string; delay?: number; className?: string }> = ({
@@ -48,59 +49,64 @@ const ScrambleText: React.FC<{ targetText: string; delay?: number; className?: s
   return <span className={className}>{text || targetText}</span>;
 };
 
-// Burnable element wrapper with authentic Minecraft fiery ignition, charcoal ash dissolution, and rekindle support
-const BurnableItem: React.FC<{
-  id: string;
-  isBurned: boolean;
-  isBurning: boolean;
+// Burnable Word with Letter-by-Letter Fire Spread Mechanics
+interface BurnableWordProps {
+  wordId: string;
+  word: string;
+  burnedIds: Set<string>;
+  burningIds: Set<string>;
   className?: string;
-  children: React.ReactNode;
-}> = ({ id, isBurned, isBurning, className = '', children }) => {
+  charClassName?: string;
+}
+
+const BurnableWord: React.FC<BurnableWordProps> = ({
+  wordId,
+  word,
+  burnedIds,
+  burningIds,
+  className = '',
+  charClassName = '',
+}) => {
+  const chars = word.split('');
+
   return (
-    <motion.span
-      data-burn-id={id}
-      animate={
-        isBurned
-          ? {
-              opacity: 0,
-              scale: 0.4,
-              y: -18,
-              filter: 'blur(8px)',
-              transition: { duration: 0.3 },
-            }
-          : isBurning
-          ? {
-              opacity: [1, 1, 0.7, 0],
-              scale: [1, 1.08, 0.9, 0.5],
-              y: [0, -3, -9, -18],
-              color: ['#ff9800', '#ff5722', '#ff3d00', '#1a1a1a'],
-              textShadow: [
-                '0 0 12px #ff9800, 0 0 24px #ff5722',
-                '0 0 25px #ff5722, 0 0 45px #ff3d00',
-                '0 0 14px #ff3d00',
-                'none',
-              ],
-              filter: ['blur(0px)', 'blur(0px)', 'blur(2px)', 'blur(6px)'],
-              transition: { duration: 0.52, ease: 'easeOut' },
-            }
-          : {
-              opacity: 1,
-              scale: 1,
-              y: 0,
-              filter: 'blur(0px)',
-              color: 'inherit',
-              textShadow: 'none',
-              transition: { duration: 0.4 },
-            }
-      }
-      className={`inline-block ${isBurned ? 'pointer-events-none select-none invisible' : ''} ${className}`}
-    >
-      {children}
-    </motion.span>
+    <span className={`inline-block whitespace-nowrap ${className}`}>
+      {chars.map((char, charIdx) => {
+        const id = `${wordId}-c${charIdx}`;
+        const isBurned = burnedIds.has(id);
+        const isBurning = burningIds.has(id);
+
+        return (
+          <span
+            key={charIdx}
+            data-burn-id={id}
+            data-word-id={wordId}
+            data-char-idx={charIdx}
+            data-word-len={chars.length}
+            className={`inline-block transition-all duration-200 relative select-none ${
+              isBurned
+                ? 'opacity-0 scale-50 pointer-events-none invisible'
+                : isBurning
+                ? 'text-amber-200 scale-110 font-bold z-20'
+                : ''
+            } ${charClassName}`}
+            style={{
+              textShadow: isBurning
+                ? '0 0 10px #ffea00, 0 0 22px #ff6600, 0 0 45px #ff2200'
+                : undefined,
+              filter: isBurning ? 'blur(0.3px)' : undefined,
+              color: isBurning ? '#fff6d4' : undefined,
+            }}
+          >
+            {char}
+          </span>
+        );
+      })}
+    </span>
   );
 };
 
-// Split character kinetic typography with elastic upward reveal and individual word burning
+// Split character kinetic typography with elastic upward reveal and individual letter burning
 const AnimatedTitle: React.FC<{
   text: string;
   burnedIds: Set<string>;
@@ -111,24 +117,45 @@ const AnimatedTitle: React.FC<{
   return (
     <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-extrabold tracking-tighter text-titanium-100 leading-[0.95] mb-6 select-none">
       {words.map((word, wordIndex) => {
-        const id = `title-${wordIndex}`;
-        const isBurned = burnedIds.has(id);
-        const isBurning = burningIds.has(id);
+        const wordId = `title-w${wordIndex}`;
+        const chars = word.split('');
 
         return (
-          <BurnableItem
-            key={wordIndex}
-            id={id}
-            isBurned={isBurned}
-            isBurning={isBurning}
-            className="mr-[0.25em]"
-          >
-            <span className="inline-block whitespace-nowrap overflow-hidden py-1">
-              {word.split('').map((char, charIndex) => (
+          <span key={wordIndex} className="inline-block mr-[0.25em] whitespace-nowrap">
+            {chars.map((char, charIndex) => {
+              const id = `${wordId}-c${charIndex}`;
+              const isBurned = burnedIds.has(id);
+              const isBurning = burningIds.has(id);
+
+              return (
                 <motion.span
                   key={charIndex}
+                  data-burn-id={id}
+                  data-word-id={wordId}
+                  data-char-idx={charIndex}
+                  data-word-len={chars.length}
                   initial={{ y: '110%', opacity: 0, filter: 'blur(10px)', rotateX: 30 }}
-                  animate={{ y: '0%', opacity: 1, filter: 'blur(0px)', rotateX: 0 }}
+                  animate={
+                    isBurned
+                      ? {
+                          opacity: 0,
+                          scale: 0.2,
+                          y: -18,
+                          filter: 'blur(8px)',
+                          transition: { duration: 0.25 },
+                        }
+                      : isBurning
+                      ? {
+                          opacity: 1,
+                          scale: 1.15,
+                          y: -3,
+                          color: '#fff5cf',
+                          textShadow: '0 0 16px #ffcc00, 0 0 34px #ff6600, 0 0 65px #ff2200',
+                          filter: 'blur(0.5px)',
+                          transition: { duration: 0.1 },
+                        }
+                      : { y: '0%', opacity: 1, filter: 'blur(0px)', rotateX: 0 }
+                  }
                   transition={{
                     duration: 0.85,
                     delay: 0.18 + (wordIndex * 6 + charIndex) * 0.038,
@@ -140,13 +167,15 @@ const AnimatedTitle: React.FC<{
                     textShadow: '0 0 25px rgba(255, 255, 255, 0.4)',
                     transition: { duration: 0.15 },
                   }}
-                  className="inline-block transition-colors cursor-default"
+                  className={`inline-block transition-colors cursor-default ${
+                    isBurned ? 'pointer-events-none invisible' : ''
+                  }`}
                 >
                   {char}
                 </motion.span>
-              ))}
-            </span>
-          </BurnableItem>
+              );
+            })}
+          </span>
         );
       })}
     </h1>
@@ -154,18 +183,36 @@ const AnimatedTitle: React.FC<{
 };
 
 export const Hero: React.FC = () => {
+  const heroRef = useRef<HTMLElement>(null);
+  const [heroSize, setHeroSize] = useState({ width: 1400, height: 900 });
   const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 });
   const [activeSpecIndex, setActiveSpecIndex] = useState(0);
 
-  // Burning Mechanics State
+  // Burning Mechanics & Fire Simulation State
   const [burnedIds, setBurnedIds] = useState<Set<string>>(new Set());
   const [burningIds, setBurningIds] = useState<Set<string>>(new Set());
+  const [burningRects, setBurningRects] = useState<BurningRect[]>([]);
   const [burnedCount, setBurnedCount] = useState(0);
 
   const burnedRef = useRef<Set<string>>(new Set());
   const burningRef = useRef<Set<string>>(new Set());
 
-  // Synthesized Web Audio API burning sizzle / fire sound
+  // Track Hero dimensions for precise absolute positioning and simulation
+  useEffect(() => {
+    const updateSize = () => {
+      if (heroRef.current) {
+        setHeroSize({
+          width: heroRef.current.clientWidth,
+          height: heroRef.current.clientHeight,
+        });
+      }
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+
+  // Web Audio burning sizzle / ignition pop sound
   const playSizzleSound = useCallback(() => {
     try {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
@@ -173,11 +220,11 @@ export const Hero: React.FC = () => {
       const ctx = new AudioCtx();
       if (ctx.state === 'suspended') ctx.resume();
 
-      const bufferSize = ctx.sampleRate * 0.3;
+      const bufferSize = ctx.sampleRate * 0.22;
       const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
       const data = buffer.getChannelData(0);
       for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.35));
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
       }
 
       const source = ctx.createBufferSource();
@@ -185,20 +232,20 @@ export const Hero: React.FC = () => {
 
       const filter = ctx.createBiquadFilter();
       filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(1100, ctx.currentTime);
-      filter.frequency.exponentialRampToValueAtTime(320, ctx.currentTime + 0.28);
-      filter.Q.setValueAtTime(2.2, ctx.currentTime);
+      filter.frequency.setValueAtTime(1200, ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(350, ctx.currentTime + 0.2);
+      filter.Q.setValueAtTime(2.5, ctx.currentTime);
 
       const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.09, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.28);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
 
       source.connect(filter);
       filter.connect(gain);
       gain.connect(ctx.destination);
 
       source.start();
-      source.stop(ctx.currentTime + 0.28);
+      source.stop(ctx.currentTime + 0.22);
     } catch {}
   }, []);
 
@@ -213,8 +260,8 @@ export const Hero: React.FC = () => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(350, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.38);
+      osc.frequency.setValueAtTime(380, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(920, ctx.currentTime + 0.38);
 
       gain.gain.setValueAtTime(0.08, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
@@ -226,43 +273,109 @@ export const Hero: React.FC = () => {
     } catch {}
   }, []);
 
-  // Real-time Collision Detection between Flame Tip and DOM Elements
+  // Ignite character and cascade fire spread across the word
+  const igniteCharacter = useCallback(
+    (el: HTMLElement, id: string, heroRect: DOMRect) => {
+      if (burnedRef.current.has(id) || burningRef.current.has(id)) return;
+
+      burningRef.current.add(id);
+      setBurningIds(new Set(burningRef.current));
+      playSizzleSound();
+
+      // Register character bounding box in Hero coordinates for FireCanvas simulation
+      const rect = el.getBoundingClientRect();
+      const newRect: BurningRect = {
+        id,
+        x: rect.left - heroRect.left,
+        y: rect.top - heroRect.top,
+        width: Math.max(10, rect.width),
+        height: Math.max(16, rect.height),
+        char: el.textContent || '',
+        progress: 0,
+      };
+
+      setBurningRects((prev) => [...prev.filter((r) => r.id !== id), newRect]);
+
+      // --- Fire Spread Cascade: Propagate to adjacent letters in the word ---
+      const wordId = el.getAttribute('data-word-id');
+      const charIdx = parseInt(el.getAttribute('data-char-idx') || '-1', 10);
+      const wordLen = parseInt(el.getAttribute('data-word-len') || '0', 10);
+
+      if (wordId && charIdx >= 0 && wordLen > 1) {
+        // Spread to left neighbor after 95ms
+        if (charIdx > 0) {
+          const leftId = `${wordId}-c${charIdx - 1}`;
+          setTimeout(() => {
+            if (!heroRef.current) return;
+            const leftEl = heroRef.current.querySelector<HTMLElement>(`[data-burn-id='${leftId}']`);
+            if (leftEl) {
+              const currentHeroRect = heroRef.current.getBoundingClientRect();
+              igniteCharacter(leftEl, leftId, currentHeroRect);
+            }
+          }, 95);
+        }
+
+        // Spread to right neighbor after 95ms
+        if (charIdx < wordLen - 1) {
+          const rightId = `${wordId}-c${charIdx + 1}`;
+          setTimeout(() => {
+            if (!heroRef.current) return;
+            const rightEl = heroRef.current.querySelector<HTMLElement>(`[data-burn-id='${rightId}']`);
+            if (rightEl) {
+              const currentHeroRect = heroRef.current.getBoundingClientRect();
+              igniteCharacter(rightEl, rightId, currentHeroRect);
+            }
+          }, 95);
+        }
+      }
+
+      // After 700ms, character chars to ash and completely vanishes
+      setTimeout(() => {
+        burningRef.current.delete(id);
+        burnedRef.current.add(id);
+        setBurningIds(new Set(burningRef.current));
+        setBurnedIds(new Set(burnedRef.current));
+        setBurnedCount(burnedRef.current.size);
+        setBurningRects((prev) => prev.filter((r) => r.id !== id));
+      }, 700);
+    },
+    [playSizzleSound]
+  );
+
+  // Real-time Collision Detection between Torch Flame Tip and Letter Spans
   const handleFlameMove = useCallback(
     (flameX: number, flameY: number) => {
-      const targets = document.querySelectorAll<HTMLElement>('[data-burn-id]');
+      if (!heroRef.current) return;
+      const heroRect = heroRef.current.getBoundingClientRect();
+
+      const targets = heroRef.current.querySelectorAll<HTMLElement>('[data-burn-id]');
       targets.forEach((el) => {
         const id = el.getAttribute('data-burn-id');
         if (!id) return;
         if (burnedRef.current.has(id) || burningRef.current.has(id)) return;
 
         const rect = el.getBoundingClientRect();
-        const padding = 14;
+        const relLeft = rect.left - heroRect.left;
+        const relRight = rect.right - heroRect.left;
+        const relTop = rect.top - heroRect.top;
+        const relBottom = rect.bottom - heroRect.top;
 
+        // Burning radius around flame tip
+        const padding = 16;
         if (
-          flameX >= rect.left - padding &&
-          flameX <= rect.right + padding &&
-          flameY >= rect.top - padding &&
-          flameY <= rect.bottom + padding
+          flameX >= relLeft - padding &&
+          flameX <= relRight + padding &&
+          flameY >= relTop - padding &&
+          flameY <= relBottom + padding
         ) {
-          // Ignite element!
-          burningRef.current.add(id);
-          setBurningIds(new Set(burningRef.current));
-          playSizzleSound();
-
-          setTimeout(() => {
-            burningRef.current.delete(id);
-            burnedRef.current.add(id);
-            setBurningIds(new Set(burningRef.current));
-            setBurnedIds(new Set(burnedRef.current));
-            setBurnedCount(burnedRef.current.size);
-          }, 520);
+          igniteCharacter(el, id, heroRect);
         }
       });
     },
-    [playSizzleSound]
+    [igniteCharacter]
   );
 
-  // Restore all burned elements
+  // Restore all burned text and blocks
   const handleRekindle = () => {
     playRekindleSound();
     burnedRef.current.clear();
@@ -270,6 +383,7 @@ export const Hero: React.FC = () => {
     setBurnedIds(new Set());
     setBurningIds(new Set());
     setBurnedCount(0);
+    setBurningRects([]);
   };
 
   // Dynamic cycling specializations
@@ -292,14 +406,23 @@ export const Hero: React.FC = () => {
     setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
   };
 
+  const roleWords = profileData.role.split(' ');
   const statementWords = profileData.statement.split(' ');
 
   return (
     <section
       id="hero"
+      ref={heroRef}
       onPointerMove={handleMouseMove}
       className="relative min-h-screen w-full flex flex-col justify-between pt-32 pb-12 px-6 sm:px-8 overflow-hidden bg-obsidian-950"
     >
+      {/* 2D Fire & Billowing Smoke Particle Simulation Canvas */}
+      <FireCanvas
+        burningRects={burningRects}
+        containerWidth={heroSize.width}
+        containerHeight={heroSize.height}
+      />
+
       {/* Film grain overlay */}
       <div className="absolute inset-0 pointer-events-none bg-grain opacity-60 mix-blend-overlay" />
 
@@ -328,99 +451,92 @@ export const Hero: React.FC = () => {
             className="flex items-center gap-2 sm:gap-3 mb-6"
           >
             <span className="w-4 sm:w-8 h-[1px] bg-titanium-400/40 shrink-0" />
-            <BurnableItem
-              id="hero-eyebrow"
-              isBurned={burnedIds.has('hero-eyebrow')}
-              isBurning={burningIds.has('hero-eyebrow')}
-            >
-              <span className="font-mono text-[10.5px] sm:text-xs md:text-sm tracking-wider sm:tracking-widest text-titanium-400 uppercase font-medium whitespace-nowrap">
-                <ScrambleText targetText="AI / MACHINE LEARNING / FULL-STACK" delay={200} />
-              </span>
-            </BurnableItem>
+            <span className="font-mono text-[10.5px] sm:text-xs md:text-sm tracking-wider sm:tracking-widest text-titanium-400 uppercase font-medium whitespace-nowrap">
+              <BurnableWord
+                wordId="eyebrow-0"
+                word="AI"
+                burnedIds={burnedIds}
+                burningIds={burningIds}
+              />
+              <span className="mx-1.5">/</span>
+              <BurnableWord
+                wordId="eyebrow-1"
+                word="MACHINE"
+                burnedIds={burnedIds}
+                burningIds={burningIds}
+              />
+              <span className="mx-1.5">LEARNING</span>
+              <span className="mx-1.5">/</span>
+              <BurnableWord
+                wordId="eyebrow-2"
+                word="FULL-STACK"
+                burnedIds={burnedIds}
+                burningIds={burningIds}
+              />
+            </span>
           </motion.div>
 
-          {/* Kinetic Animated Split-Heading: Hunain Ahmed (Each word burnable) */}
+          {/* Kinetic Animated Split-Heading: Hunain Ahmed (Each character burnable with fire spreading) */}
           <AnimatedTitle
             text={profileData.name}
             burnedIds={burnedIds}
             burningIds={burningIds}
           />
 
-          {/* Supporting positioning & Dynamic Morphing Line */}
+          {/* Supporting positioning: "AI / Machine Learning & Full-Stack Developer" */}
           <div className="space-y-3 mb-8">
-            <BurnableItem
-              id="hero-role"
-              isBurned={burnedIds.has('hero-role')}
-              isBurning={burningIds.has('hero-role')}
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.45 }}
+              className="text-xl sm:text-2xl md:text-3xl text-titanium-200 font-medium tracking-tight flex flex-wrap items-center gap-x-2.5 gap-y-1"
             >
-              <motion.p
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.45 }}
-                className="text-xl sm:text-2xl md:text-3xl text-titanium-200 font-medium tracking-tight"
-              >
-                {profileData.role}
-              </motion.p>
-            </BurnableItem>
+              {roleWords.map((word, wIdx) => (
+                <BurnableWord
+                  key={wIdx}
+                  wordId={`role-w${wIdx}`}
+                  word={word}
+                  burnedIds={burnedIds}
+                  burningIds={burningIds}
+                  className="inline-block"
+                />
+              ))}
+            </motion.p>
 
             {/* Dynamic Morphing Specialization Cycler */}
-            <BurnableItem
-              id="hero-spec"
-              isBurned={burnedIds.has('hero-spec')}
-              isBurning={burningIds.has('hero-spec')}
-            >
-              <div className="min-h-[1.75rem] sm:h-8 flex items-center overflow-hidden">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeSpecIndex}
-                    initial={{ y: 16, opacity: 0, filter: 'blur(3px)' }}
-                    animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
-                    exit={{ y: -16, opacity: 0, filter: 'blur(3px)' }}
-                    transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                    className="flex items-center gap-2.5 text-xs sm:text-[13px] md:text-sm font-mono text-titanium-400 tracking-normal"
-                  >
-                    <span className="text-[10px] font-mono font-medium text-emerald-400/90 px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 shrink-0">
-                      0{activeSpecIndex + 1}
-                    </span>
-                    <span className="text-titanium-300">
-                      {specializations[activeSpecIndex]}
-                    </span>
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            </BurnableItem>
+            <div className="min-h-[1.75rem] sm:h-8 flex items-center overflow-hidden">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeSpecIndex}
+                  initial={{ y: 16, opacity: 0, filter: 'blur(3px)' }}
+                  animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ y: -16, opacity: 0, filter: 'blur(3px)' }}
+                  transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex items-center gap-2.5 text-xs sm:text-[13px] md:text-sm font-mono text-titanium-400 tracking-normal"
+                >
+                  <span className="text-[10px] font-mono font-medium text-emerald-400/90 px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 shrink-0">
+                    0{activeSpecIndex + 1}
+                  </span>
+                  <span className="text-titanium-300">
+                    {specializations[activeSpecIndex]}
+                  </span>
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
 
-          {/* Statement with word-by-word reveal & individual word burning */}
-          <p className="text-lg sm:text-xl md:text-2xl text-titanium-300 font-light leading-relaxed max-w-2xl pt-4 border-t border-white/[0.08]">
-            {statementWords.map((word, wIdx) => {
-              const id = `statement-${wIdx}`;
-              const isBurned = burnedIds.has(id);
-              const isBurning = burningIds.has(id);
-
-              return (
-                <BurnableItem
-                  key={wIdx}
-                  id={id}
-                  isBurned={isBurned}
-                  isBurning={isBurning}
-                  className="mr-[0.3em]"
-                >
-                  <motion.span
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      duration: 0.6,
-                      delay: 0.6 + wIdx * 0.04,
-                      ease: [0.16, 1, 0.3, 1],
-                    }}
-                    className="inline-block"
-                  >
-                    {word}
-                  </motion.span>
-                </BurnableItem>
-              );
-            })}
+          {/* Statement with letter-by-letter burning and fire spreading */}
+          <p className="text-lg sm:text-xl md:text-2xl text-titanium-300 font-light leading-relaxed max-w-2xl pt-4 border-t border-white/[0.08] flex flex-wrap items-center gap-x-2 gap-y-1.5">
+            {statementWords.map((word, wIdx) => (
+              <BurnableWord
+                key={wIdx}
+                wordId={`statement-w${wIdx}`}
+                word={word}
+                burnedIds={burnedIds}
+                burningIds={burningIds}
+                className="inline-block"
+              />
+            ))}
           </p>
 
           {/* Action Row: Explore Collaboration & Download Resume / CV */}
@@ -430,47 +546,45 @@ export const Hero: React.FC = () => {
             transition={{ duration: 0.7, delay: 1.0 }}
             className="mt-8 flex flex-wrap items-center gap-3.5"
           >
-            <BurnableItem
-              id="cta-explore"
-              isBurned={burnedIds.has('cta-explore')}
-              isBurning={burningIds.has('cta-explore')}
+            <a
+              href="#contact"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-mono tracking-wider bg-white text-obsidian-950 font-semibold hover:bg-titanium-200 transition-colors"
+              data-cursor="pointer"
             >
-              <a
-                href="#contact"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-mono tracking-wider bg-white text-obsidian-950 font-semibold hover:bg-titanium-200 transition-colors"
-                data-cursor="pointer"
-              >
-                <span>EXPLORE COLLABORATION</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </a>
-            </BurnableItem>
+              <BurnableWord
+                wordId="cta-explore"
+                word="EXPLORE COLLABORATION"
+                burnedIds={burnedIds}
+                burningIds={burningIds}
+              />
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </a>
 
-            <BurnableItem
-              id="cta-cv"
-              isBurned={burnedIds.has('cta-cv')}
-              isBurning={burningIds.has('cta-cv')}
+            <a
+              href="/assets/Hunain_Ahmed_CV.pdf"
+              download="Hunain_Ahmed_CV.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-mono tracking-wider text-titanium-200 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-emerald-500/40 hover:text-white transition-all duration-200"
+              data-cursor="pointer"
+              title="Download ATS-Optimized CV (PDF)"
             >
-              <a
-                href="/assets/Hunain_Ahmed_CV.pdf"
-                download="Hunain_Ahmed_CV.pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-mono tracking-wider text-titanium-200 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-emerald-500/40 hover:text-white transition-all duration-200"
-                data-cursor="pointer"
-                title="Download ATS-Optimized CV (PDF)"
-              >
-                <FileDown className="w-3.5 h-3.5 text-emerald-400" />
-                <span>DOWNLOAD RESUME / CV</span>
-              </a>
-            </BurnableItem>
+              <FileDown className="w-3.5 h-3.5 text-emerald-400" />
+              <BurnableWord
+                wordId="cta-cv"
+                word="DOWNLOAD RESUME / CV"
+                burnedIds={burnedIds}
+                burningIds={burningIds}
+              />
+            </a>
           </motion.div>
 
-          {/* Interactive Tech Pills: Each pill individually burnable! */}
+          {/* Interactive Tech Pills: Each pill individually burnable with fire spreading */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 1.15 }}
-            className="mt-6 flex flex-wrap items-center gap-3"
+            className="mt-6 flex flex-wrap items-center gap-2.5 sm:gap-3"
           >
             {[
               'Python',
@@ -479,37 +593,33 @@ export const Hero: React.FC = () => {
               'PyTorch & LLMs',
               'FastAPI & Distributed Systems',
             ].map((tech, tIdx) => {
-              const id = `tech-${tIdx}`;
-              const isBurned = burnedIds.has(id);
-              const isBurning = burningIds.has(id);
-
+              const pillId = `tech-p${tIdx}`;
               return (
-                <BurnableItem
+                <span
                   key={tech}
-                  id={id}
-                  isBurned={isBurned}
-                  isBurning={isBurning}
+                  className="group px-3 py-1 rounded-md text-xs font-mono text-titanium-300 bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.08] hover:border-white/20 transition-all duration-300 cursor-default inline-flex items-center gap-1.5 select-none"
+                  data-cursor="pointer"
                 >
-                  <span
-                    className="group px-3 py-1 rounded-md text-xs font-mono text-titanium-300 bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.08] hover:border-white/20 transition-all duration-300 cursor-default inline-flex items-center gap-1.5"
-                    data-cursor="pointer"
-                  >
-                    <span className="w-1 h-1 rounded-full bg-white/40 group-hover:bg-emerald-400 group-hover:scale-125 transition-all duration-300" />
-                    <span>{tech}</span>
-                  </span>
-                </BurnableItem>
+                  <span className="w-1 h-1 rounded-full bg-white/40 group-hover:bg-emerald-400 group-hover:scale-125 transition-all duration-300" />
+                  <BurnableWord
+                    wordId={pillId}
+                    word={tech}
+                    burnedIds={burnedIds}
+                    burningIds={burningIds}
+                  />
+                </span>
               );
             })}
           </motion.div>
         </div>
       </div>
 
-      {/* 3D Boxless Draggable Minecraft Torch (Desktop Only) */}
+      {/* 3D Boxless Draggable Minecraft Torch (Desktop Only, Absolute inside Hero) */}
       <div className="hidden lg:block">
-        <MinecraftTorch onFlameMove={handleFlameMove} />
+        <MinecraftTorch onFlameMove={handleFlameMove} heroBounds={heroSize} />
       </div>
 
-      {/* Rekindle Floating Action Pill when elements are destroyed */}
+      {/* Rekindle Floating Action Pill (Strictly inside Hero Section) */}
       <AnimatePresence>
         {burnedCount > 0 && (
           <motion.button
@@ -517,7 +627,7 @@ export const Hero: React.FC = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.85 }}
             onClick={handleRekindle}
-            className="fixed bottom-8 right-8 z-50 flex items-center gap-2.5 px-5 py-3 rounded-full font-mono text-xs font-bold tracking-wider text-obsidian-950 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300 hover:scale-105 active:scale-95 shadow-[0_0_35px_rgba(251,191,36,0.65)] transition-transform cursor-pointer border border-amber-200"
+            className="absolute bottom-16 right-8 z-50 flex items-center gap-2.5 px-5 py-3 rounded-full font-mono text-xs font-bold tracking-wider text-obsidian-950 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300 hover:scale-105 active:scale-95 shadow-[0_0_35px_rgba(251,191,36,0.65)] transition-transform cursor-pointer border border-amber-200"
             title="Click to restore all destroyed blocks"
           >
             <RotateCcw className="w-3.5 h-3.5 animate-spin" />

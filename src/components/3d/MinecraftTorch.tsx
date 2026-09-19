@@ -3,22 +3,28 @@ import * as THREE from 'three';
 
 interface MinecraftTorchProps {
   onFlameMove?: (x: number, y: number) => void;
+  heroBounds?: { width: number; height: number };
 }
 
-export const MinecraftTorch: React.FC<MinecraftTorchProps> = ({ onFlameMove }) => {
+export const MinecraftTorch: React.FC<MinecraftTorchProps> = ({ onFlameMove, heroBounds }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mountRef = useRef<HTMLDivElement>(null);
 
-  // Position of the free-floating torch (initialized synchronously to avoid mount race)
+  // Position of the free-floating torch inside Hero container
   const [pos, setPos] = useState<{ x: number; y: number }>(() => {
     if (typeof window !== 'undefined') {
+      const width = heroBounds?.width ?? window.innerWidth;
+      const height = heroBounds?.height ?? window.innerHeight;
       return {
-        x: Math.max(window.innerWidth * 0.68, window.innerWidth - 380),
-        y: window.innerHeight * 0.30,
+        x: Math.max(width * 0.68, width - 360),
+        y: Math.max(120, height * 0.28),
       };
     }
     return { x: 800, y: 240 };
   });
+  const posRef = useRef(pos);
+  posRef.current = pos;
+
   const [isDragging, setIsDragging] = useState(false);
   const [hasMoved, setHasMoved] = useState(false);
   const [isFlaring, setIsFlaring] = useState(false);
@@ -107,7 +113,6 @@ export const MinecraftTorch: React.FC<MinecraftTorchProps> = ({ onFlameMove }) =
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
-    renderer.domElement.style.pointerEvents = 'none';
     container.appendChild(renderer.domElement);
 
     // --- Procedural 16x16 Minecraft Textures with NearestFilter ---
@@ -432,8 +437,8 @@ export const MinecraftTorch: React.FC<MinecraftTorchProps> = ({ onFlameMove }) =
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     } catch {}
 
-    const curX = pos.x;
-    const curY = pos.y;
+    const curX = posRef.current.x;
+    const curY = posRef.current.y;
 
     state.current.isDragging = true;
     state.current.dragStart = { x: e.clientX, y: e.clientY };
@@ -462,14 +467,17 @@ export const MinecraftTorch: React.FC<MinecraftTorchProps> = ({ onFlameMove }) =
     state.current.lastPointerPos = { x: e.clientX, y: e.clientY };
     state.current.lastMoveTime = now;
 
-    // Constrain position within viewport margins
-    const newX = Math.max(10, Math.min(window.innerWidth - 180, state.current.initialTorchPos.x + dx));
-    const newY = Math.max(10, Math.min(window.innerHeight - 260, state.current.initialTorchPos.y + dy));
+    // Constrain position within Hero section bounds
+    const heroWidth = heroBounds?.width ?? (typeof window !== 'undefined' ? window.innerWidth : 1200);
+    const heroHeight = heroBounds?.height ?? (typeof window !== 'undefined' ? window.innerHeight : 800);
+
+    const newX = Math.max(12, Math.min(heroWidth - 176, state.current.initialTorchPos.x + dx));
+    const newY = Math.max(12, Math.min(heroHeight - 256, state.current.initialTorchPos.y + dy));
 
     setPos({ x: newX, y: newY });
     setHasMoved(true);
 
-    // Calculate screen coordinate of the flame tip (top center of torch)
+    // Calculate Hero-relative coordinate of the flame tip (top center of torch)
     // Torch width = 160px, height = 240px. Flame tip is at ~ (x + 80, y + 42)
     const flameX = newX + 80;
     const flameY = newY + 42;
@@ -499,10 +507,10 @@ export const MinecraftTorch: React.FC<MinecraftTorchProps> = ({ onFlameMove }) =
     <div
       ref={containerRef}
       style={{
-        position: 'fixed',
+        position: 'absolute',
         left: `${pos.x}px`,
         top: `${pos.y}px`,
-        zIndex: 9999,
+        zIndex: 40,
         touchAction: 'none',
       }}
       className="select-none flex flex-col items-center pointer-events-auto transition-transform duration-75"
@@ -522,6 +530,7 @@ export const MinecraftTorch: React.FC<MinecraftTorchProps> = ({ onFlameMove }) =
       {/* 3D WebGL Canvas (NO BOX, NO BORDERS, NO CARDS) */}
       <div
         ref={mountRef}
+        data-torch-handle="true"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
