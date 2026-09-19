@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowDown, Terminal, ArrowUpRight, FileDown, RotateCcw } from 'lucide-react';
 import { profileData } from '@/data/profile';
-import { MinecraftTorch } from '@/components/3d/MinecraftTorch';
+import { RealisticTorch } from '@/components/3d/RealisticTorch';
 import { FireCanvas, BurningRect } from '@/components/3d/FireCanvas';
+import { EldenRingBarrier } from '@/components/sections/EldenRingBarrier';
 
 // Scramble text effect on initial load for cybernetic/AI engineering feel
 const ScrambleText: React.FC<{ targetText: string; delay?: number; className?: string }> = ({
@@ -106,75 +107,38 @@ const BurnableWord: React.FC<BurnableWordProps> = ({
   );
 };
 
-// Split character kinetic typography with elastic upward reveal and individual letter burning
-const AnimatedTitle: React.FC<{
-  text: string;
-  burnedIds: Set<string>;
-  burningIds: Set<string>;
-}> = ({ text, burnedIds, burningIds }) => {
+// Split character kinetic typography with elastic upward reveal (Immune to burning, shielded by Elden Ring Barrier)
+const AnimatedTitle: React.FC<{ text: string }> = ({ text }) => {
   const words = text.split(' ');
 
   return (
     <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-extrabold tracking-tighter text-titanium-100 leading-[0.95] mb-6 select-none">
       {words.map((word, wordIndex) => {
-        const wordId = `title-w${wordIndex}`;
         const chars = word.split('');
 
         return (
           <span key={wordIndex} className="inline-block mr-[0.25em] whitespace-nowrap">
-            {chars.map((char, charIndex) => {
-              const id = `${wordId}-c${charIndex}`;
-              const isBurned = burnedIds.has(id);
-              const isBurning = burningIds.has(id);
-
-              return (
-                <motion.span
-                  key={charIndex}
-                  data-burn-id={id}
-                  data-word-id={wordId}
-                  data-char-idx={charIndex}
-                  data-word-len={chars.length}
-                  initial={{ y: '110%', opacity: 0, filter: 'blur(10px)', rotateX: 30 }}
-                  animate={
-                    isBurned
-                      ? {
-                          opacity: 0,
-                          scale: 0.2,
-                          y: -18,
-                          filter: 'blur(8px)',
-                          transition: { duration: 0.25 },
-                        }
-                      : isBurning
-                      ? {
-                          opacity: 1,
-                          scale: 1.15,
-                          y: -3,
-                          color: '#fff5cf',
-                          textShadow: '0 0 16px #ffcc00, 0 0 34px #ff6600, 0 0 65px #ff2200',
-                          filter: 'blur(0.5px)',
-                          transition: { duration: 0.1 },
-                        }
-                      : { y: '0%', opacity: 1, filter: 'blur(0px)', rotateX: 0 }
-                  }
-                  transition={{
-                    duration: 0.85,
-                    delay: 0.18 + (wordIndex * 6 + charIndex) * 0.038,
-                    ease: [0.16, 1, 0.3, 1],
-                  }}
-                  whileHover={{
-                    y: -4,
-                    color: '#ffffff',
-                    textShadow: '0 0 25px rgba(255, 255, 255, 0.4)',
-                    transition: { duration: 0.15 },
-                  }}
-                  className={`inline-block transition-colors cursor-default ${
-                    isBurned ? 'pointer-events-none invisible' : ''
-                  }`}
-                >
-                  {char}
-                </motion.span>
-              );
-            })}
+            {chars.map((char, charIndex) => (
+              <motion.span
+                key={charIndex}
+                initial={{ y: '110%', opacity: 0, filter: 'blur(10px)', rotateX: 30 }}
+                animate={{ y: '0%', opacity: 1, filter: 'blur(0px)', rotateX: 0 }}
+                transition={{
+                  duration: 0.85,
+                  delay: 0.18 + (wordIndex * 6 + charIndex) * 0.038,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                whileHover={{
+                  y: -4,
+                  color: '#ffffff',
+                  textShadow: '0 0 25px rgba(255, 255, 255, 0.4)',
+                  transition: { duration: 0.15 },
+                }}
+                className="inline-block transition-colors cursor-default"
+              >
+                {char}
+              </motion.span>
+            ))}
           </span>
         );
       })}
@@ -184,15 +148,23 @@ const AnimatedTitle: React.FC<{
 
 export const Hero: React.FC = () => {
   const heroRef = useRef<HTMLElement>(null);
+  const nameContainerRef = useRef<HTMLDivElement>(null);
   const [heroSize, setHeroSize] = useState({ width: 1400, height: 900 });
   const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 });
   const [activeSpecIndex, setActiveSpecIndex] = useState(0);
+
+  // Flame Tip Position for Elden Ring Barrier sensor
+  const [flameTipPos, setFlameTipPos] = useState<{ x: number; y: number } | null>(null);
 
   // Burning Mechanics & Fire Simulation State
   const [burnedIds, setBurnedIds] = useState<Set<string>>(new Set());
   const [burningIds, setBurningIds] = useState<Set<string>>(new Set());
   const [burningRects, setBurningRects] = useState<BurningRect[]>([]);
   const [burnedCount, setBurnedCount] = useState(0);
+
+  // 5-Click Supernova Easter Egg State
+  const [isSupernovaShockwave, setIsSupernovaShockwave] = useState(false);
+  const [showSupernovaBanner, setShowSupernovaBanner] = useState(false);
 
   const burnedRef = useRef<Set<string>>(new Set());
   const burningRef = useRef<Set<string>>(new Set());
@@ -273,9 +245,71 @@ export const Hero: React.FC = () => {
     } catch {}
   }, []);
 
+  // Deep cinematic Supernova blast sound synthesizer
+  const playSupernovaSound = useCallback(() => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') ctx.resume();
+
+      const now = ctx.currentTime;
+
+      // Sub-bass frequency dive
+      const subOsc = ctx.createOscillator();
+      const subGain = ctx.createGain();
+      subOsc.type = 'sawtooth';
+      subOsc.frequency.setValueAtTime(160, now);
+      subOsc.frequency.exponentialRampToValueAtTime(24, now + 1.2);
+
+      const subFilter = ctx.createBiquadFilter();
+      subFilter.type = 'lowpass';
+      subFilter.frequency.setValueAtTime(250, now);
+      subFilter.frequency.exponentialRampToValueAtTime(60, now + 1.2);
+
+      subGain.gain.setValueAtTime(0.35, now);
+      subGain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+
+      subOsc.connect(subFilter);
+      subFilter.connect(subGain);
+      subGain.connect(ctx.destination);
+      subOsc.start(now);
+      subOsc.stop(now + 1.4);
+
+      // Roaring shockwave noise burst
+      const bufferSize = ctx.sampleRate * 1.5;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.35));
+      }
+
+      const noiseSource = ctx.createBufferSource();
+      noiseSource.buffer = buffer;
+
+      const noiseFilter = ctx.createBiquadFilter();
+      noiseFilter.type = 'bandpass';
+      noiseFilter.frequency.setValueAtTime(1400, now);
+      noiseFilter.frequency.exponentialRampToValueAtTime(150, now + 1.2);
+      noiseFilter.Q.setValueAtTime(1.8, now);
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.25, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+
+      noiseSource.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+      noiseSource.start(now);
+      noiseSource.stop(now + 1.5);
+    } catch {}
+  }, []);
+
   // Ignite character and cascade fire spread across the word
   const igniteCharacter = useCallback(
     (el: HTMLElement, id: string, heroRect: DOMRect) => {
+      // "Hunain Ahmed" title elements are permanently immune to burning
+      if (id.startsWith('title-')) return;
       if (burnedRef.current.has(id) || burningRef.current.has(id)) return;
 
       burningRef.current.add(id);
@@ -345,13 +379,15 @@ export const Hero: React.FC = () => {
   // Real-time Collision Detection between Torch Flame Tip and Letter Spans
   const handleFlameMove = useCallback(
     (flameX: number, flameY: number) => {
+      setFlameTipPos({ x: flameX, y: flameY });
+
       if (!heroRef.current) return;
       const heroRect = heroRef.current.getBoundingClientRect();
 
       const targets = heroRef.current.querySelectorAll<HTMLElement>('[data-burn-id]');
       targets.forEach((el) => {
         const id = el.getAttribute('data-burn-id');
-        if (!id) return;
+        if (!id || id.startsWith('title-')) return;
         if (burnedRef.current.has(id) || burningRef.current.has(id)) return;
 
         const rect = el.getBoundingClientRect();
@@ -375,6 +411,57 @@ export const Hero: React.FC = () => {
     [igniteCharacter]
   );
 
+  // 5-Click Supernova Blast Easter Egg Handler
+  const handleSupernova = useCallback(() => {
+    playSupernovaSound();
+    setIsSupernovaShockwave(true);
+    setTimeout(() => setIsSupernovaShockwave(false), 900);
+
+    // Show FromSoftware style banner
+    setShowSupernovaBanner(true);
+    setTimeout(() => setShowSupernovaBanner(false), 5200);
+
+    if (!heroRef.current) return;
+    const heroRect = heroRef.current.getBoundingClientRect();
+    const targets = heroRef.current.querySelectorAll<HTMLElement>('[data-burn-id]');
+
+    const newBurningRects: BurningRect[] = [];
+    targets.forEach((el) => {
+      const id = el.getAttribute('data-burn-id');
+      if (!id || id.startsWith('title-')) return;
+
+      burningRef.current.add(id);
+      const rect = el.getBoundingClientRect();
+      newBurningRects.push({
+        id,
+        x: rect.left - heroRect.left,
+        y: rect.top - heroRect.top,
+        width: Math.max(10, rect.width),
+        height: Math.max(16, rect.height),
+        char: el.textContent || '',
+        progress: 0,
+      });
+    });
+
+    setBurningIds(new Set(burningRef.current));
+    setBurningRects(newBurningRects);
+
+    // Turn all ignited text into ash after 800ms
+    setTimeout(() => {
+      targets.forEach((el) => {
+        const id = el.getAttribute('data-burn-id');
+        if (id && !id.startsWith('title-')) {
+          burningRef.current.delete(id);
+          burnedRef.current.add(id);
+        }
+      });
+      setBurningIds(new Set(burningRef.current));
+      setBurnedIds(new Set(burnedRef.current));
+      setBurnedCount(burnedRef.current.size);
+      setBurningRects([]);
+    }, 800);
+  }, [playSupernovaSound]);
+
   // Restore all burned text and blocks
   const handleRekindle = () => {
     playRekindleSound();
@@ -384,6 +471,7 @@ export const Hero: React.FC = () => {
     setBurningIds(new Set());
     setBurnedCount(0);
     setBurningRects([]);
+    setShowSupernovaBanner(false);
   };
 
   // Dynamic cycling specializations
@@ -422,6 +510,58 @@ export const Hero: React.FC = () => {
         containerWidth={heroSize.width}
         containerHeight={heroSize.height}
       />
+
+      {/* GPU-Accelerated Supernova Shockwave Ring & Ambient Blast */}
+      <AnimatePresence>
+        {isSupernovaShockwave && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.9, ease: 'easeOut' }}
+            className="absolute inset-0 pointer-events-none z-50 flex items-center justify-center overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-radial from-amber-400/40 via-orange-500/20 to-transparent" />
+            <motion.div
+              initial={{ scale: 0.1, opacity: 1 }}
+              animate={{ scale: 5.5, opacity: 0 }}
+              transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+              className="w-96 h-96 rounded-full border-4 border-amber-300 shadow-[0_0_120px_#f59e0b,inset_0_0_80px_#ea580c]"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* FromSoftware / Elden Ring "YOU SHOULD PAY FOR THAT DESTRUCTION" Banner */}
+      <AnimatePresence>
+        {showSupernovaBanner && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.03 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            onClick={() => setShowSupernovaBanner(false)}
+            className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-auto cursor-pointer"
+          >
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
+            <div className="relative z-10 w-full max-w-4xl py-12 px-6 sm:px-12 flex flex-col items-center text-center bg-gradient-to-b from-transparent via-obsidian-950/95 to-transparent border-y border-amber-500/30">
+              <div className="flex items-center gap-3 mb-4 text-amber-400/80 text-xs font-serif tracking-[0.35em] uppercase">
+                <span className="w-8 sm:w-16 h-[1px] bg-amber-400/40" />
+                <span>SACRED RESTRICTION VIOLATED</span>
+                <span className="w-8 sm:w-16 h-[1px] bg-amber-400/40" />
+              </div>
+
+              <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-serif tracking-[0.22em] text-transparent bg-clip-text bg-gradient-to-b from-amber-100 via-amber-300 to-amber-600 drop-shadow-[0_0_25px_rgba(245,158,11,0.55)] font-normal uppercase select-none mb-4">
+                YOU SHOULD PAY FOR THAT DESTRUCTION
+              </h2>
+
+              <p className="font-mono text-[11px] sm:text-xs text-titanium-400 tracking-widest uppercase">
+                [ Click anywhere or press Rekindle to restore ]
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Film grain overlay */}
       <div className="absolute inset-0 pointer-events-none bg-grain opacity-60 mix-blend-overlay" />
@@ -476,12 +616,14 @@ export const Hero: React.FC = () => {
             </span>
           </motion.div>
 
-          {/* Kinetic Animated Split-Heading: Hunain Ahmed (Each character burnable with fire spreading) */}
-          <AnimatedTitle
-            text={profileData.name}
-            burnedIds={burnedIds}
-            burningIds={burningIds}
-          />
+          {/* Kinetic Animated Split-Heading: Hunain Ahmed (Permanent Immunity with Elden Ring Magic Barrier) */}
+          <EldenRingBarrier
+            flamePos={flameTipPos}
+            targetRef={nameContainerRef}
+            heroRect={heroRef.current ? heroRef.current.getBoundingClientRect() : null}
+          >
+            <AnimatedTitle text={profileData.name} />
+          </EldenRingBarrier>
 
           {/* Supporting positioning: "AI / Machine Learning & Full-Stack Developer" */}
           <div className="space-y-3 mb-8">
@@ -614,24 +756,28 @@ export const Hero: React.FC = () => {
         </div>
       </div>
 
-      {/* 3D Boxless Draggable Minecraft Torch (Desktop Only, Absolute inside Hero) */}
+      {/* 3D Realistic Medieval Elden Ring Torch (Desktop Only, Absolute inside Hero) */}
       <div className="hidden lg:block">
-        <MinecraftTorch onFlameMove={handleFlameMove} heroBounds={heroSize} />
+        <RealisticTorch
+          onFlameMove={handleFlameMove}
+          onSupernova={handleSupernova}
+          heroBounds={heroSize}
+        />
       </div>
 
-      {/* Rekindle Floating Action Pill (Strictly inside Hero Section) */}
+      {/* Small Refined Rekindle Button (Strictly inside Hero Section) */}
       <AnimatePresence>
         {burnedCount > 0 && (
           <motion.button
-            initial={{ opacity: 0, y: 24, scale: 0.85 }}
+            initial={{ opacity: 0, y: 16, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 24, scale: 0.85 }}
+            exit={{ opacity: 0, y: 16, scale: 0.9 }}
             onClick={handleRekindle}
-            className="absolute bottom-16 right-8 z-50 flex items-center gap-2.5 px-5 py-3 rounded-full font-mono text-xs font-bold tracking-wider text-obsidian-950 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300 hover:scale-105 active:scale-95 shadow-[0_0_35px_rgba(251,191,36,0.65)] transition-transform cursor-pointer border border-amber-200"
-            title="Click to restore all destroyed blocks"
+            className="absolute bottom-8 right-8 z-40 flex items-center gap-2 px-3.5 py-1.5 rounded-full font-mono text-[11px] font-semibold tracking-wider text-obsidian-950 bg-gradient-to-r from-amber-400 to-orange-400 hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(251,191,36,0.45)] transition-transform cursor-pointer border border-amber-200 select-none"
+            title="Restore all destroyed blocks"
           >
-            <RotateCcw className="w-3.5 h-3.5 animate-spin" />
-            <span>REKINDLE DESTROYED BLOCKS ({burnedCount}) ↺</span>
+            <RotateCcw className="w-3 h-3" />
+            <span>Rekindle ({burnedCount}) ↺</span>
           </motion.button>
         )}
       </AnimatePresence>
