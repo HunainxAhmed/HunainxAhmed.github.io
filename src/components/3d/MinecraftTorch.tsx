@@ -1,42 +1,56 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import * as THREE from 'three';
-import { RotateCw, Flame, Hand, Move } from 'lucide-react';
 
-export const MinecraftTorch: React.FC = () => {
+interface MinecraftTorchProps {
+  onFlameMove?: (x: number, y: number) => void;
+}
+
+export const MinecraftTorch: React.FC<MinecraftTorchProps> = ({ onFlameMove }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const mountRef = useRef<HTMLDivElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [clickCount, setClickCount] = useState(0);
-  const [isFlaring, setIsFlaring] = useState(false);
-  const [isCarrying, setIsCarrying] = useState(false);
-  const [carryPos, setCarryPos] = useState<{ x: number; y: number } | null>(null);
 
-  // References to communicate with Three.js render loop without state latency
-  const interactionState = useRef({
+  // Position of the free-floating torch (initialized synchronously to avoid mount race)
+  const [pos, setPos] = useState<{ x: number; y: number }>(() => {
+    if (typeof window !== 'undefined') {
+      return {
+        x: Math.max(window.innerWidth * 0.68, window.innerWidth - 380),
+        y: window.innerHeight * 0.30,
+      };
+    }
+    return { x: 800, y: 240 };
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const [hasMoved, setHasMoved] = useState(false);
+  const [isFlaring, setIsFlaring] = useState(false);
+
+  // Interaction & physics state accessible inside the render loop without re-renders
+  const state = useRef({
     isDragging: false,
     dragStart: { x: 0, y: 0 },
-    rotation: { x: 0.18, y: -0.4 },
-    targetRotation: { x: 0.18, y: -0.4 },
-    angularVelocity: { x: 0, y: 0 },
-    mouseNormalized: { x: 0, y: 0 },
+    initialTorchPos: { x: 0, y: 0 },
+    velocity: { x: 0, y: 0 },
+    lastPointerPos: { x: 0, y: 0 },
+    lastMoveTime: 0,
+    rotation: { x: 0.2, y: -0.4, z: 0 },
+    targetRotation: { x: 0.2, y: -0.4, z: 0 },
     burstTrigger: 0,
     lightFlicker: 1.0,
+    pointerMovedTotal: 0,
   });
 
-  // Pure Web Audio API gentle flame crackle
-  const playFlameSound = () => {
+  // Synthesized Web Audio API flame crackle sound
+  const playFlameSound = useCallback(() => {
     try {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
       if (ctx.state === 'suspended') ctx.resume();
 
-      // Soft burst noise
-      const bufferSize = ctx.sampleRate * 0.15;
+      const bufferSize = ctx.sampleRate * 0.16;
       const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
       const output = buffer.getChannelData(0);
       for (let i = 0; i < bufferSize; i++) {
-        output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
+        output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.25));
       }
 
       const whiteNoise = ctx.createBufferSource();
@@ -44,41 +58,56 @@ export const MinecraftTorch: React.FC = () => {
 
       const filter = ctx.createBiquadFilter();
       filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(600, ctx.currentTime);
-      filter.Q.setValueAtTime(3.0, ctx.currentTime);
+      filter.frequency.setValueAtTime(650, ctx.currentTime);
+      filter.Q.setValueAtTime(3.5, ctx.currentTime);
 
       const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.06, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.16);
 
       whiteNoise.connect(filter);
       filter.connect(gain);
       gain.connect(ctx.destination);
 
       whiteNoise.start();
-      whiteNoise.stop(ctx.currentTime + 0.15);
+      whiteNoise.stop(ctx.currentTime + 0.16);
     } catch {}
-  };
+  }, []);
 
+  // Update position on window resize if user hasn't dragged torch yet
+  useEffect(() => {
+    const handleResize = () => {
+      if (!hasMoved && !state.current.isDragging) {
+        setPos({
+          x: Math.max(window.innerWidth * 0.68, window.innerWidth - 380),
+          y: window.innerHeight * 0.30,
+        });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [hasMoved]);
+
+  // --- Three.js Voxel Torch Setup ---
   useEffect(() => {
     const container = mountRef.current;
     if (!container) return;
 
-    const width = container.clientWidth || 320;
-    const height = container.clientHeight || 340;
+    const width = 160;
+    const height = 240;
 
-    // --- Scene Setup ---
     const scene = new THREE.Scene();
-    // Slightly closer camera for bold, rich presence
-    const camera = new THREE.PerspectiveCamera(36, width / height, 0.1, 100);
-    camera.position.set(0, 0.28, 2.75);
-    camera.lookAt(0, 0.15, 0);
+    const camera = new THREE.PerspectiveCamera(34, width / height, 0.1, 100);
+    camera.position.set(0, 0.25, 2.7);
+    camera.lookAt(0, 0.18, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
+    renderer.domElement.style.pointerEvents = 'none';
     container.appendChild(renderer.domElement);
 
     // --- Procedural 16x16 Minecraft Textures with NearestFilter ---
@@ -88,11 +117,7 @@ export const MinecraftTorch: React.FC = () => {
       canvas.height = 16;
       const ctx = canvas.getContext('2d')!;
 
-      // Oak stick authentic pixel palette
-      const palette = [
-        '#8c6747', '#7b573a', '#6a472c', '#5b3b22', '#4b2f19', '#3b2413'
-      ];
-
+      const palette = ['#8c6747', '#7b573a', '#6a472c', '#5b3b22', '#4b2f19', '#3b2413'];
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           const grain = (x + y * 2) % 3;
@@ -116,15 +141,12 @@ export const MinecraftTorch: React.FC = () => {
       canvas.height = 16;
       const ctx = canvas.getContext('2d')!;
 
-      // Coal & ember glow pixel palette
       for (let y = 0; y < 16; y++) {
         for (let x = 0; x < 16; x++) {
           if (y < 4) {
-            // Hot ember top
             const embers = ['#ffea47', '#ff9800', '#ff5722', '#ffc107', '#ff3d00'];
             ctx.fillStyle = embers[Math.floor(Math.random() * embers.length)];
           } else {
-            // Dark charcoal base with occasional ember specks
             if (Math.random() > 0.82) {
               ctx.fillStyle = '#ff6b35';
             } else {
@@ -149,7 +171,7 @@ export const MinecraftTorch: React.FC = () => {
     // --- Torch Voxel Model ---
     const torchGroup = new THREE.Group();
 
-    // 1. Wooden Stick (Voxel box)
+    // Wooden Stick
     const stickGeo = new THREE.BoxGeometry(0.24, 1.3, 0.24);
     const stickMat = new THREE.MeshStandardMaterial({
       map: woodTexture,
@@ -160,23 +182,21 @@ export const MinecraftTorch: React.FC = () => {
     stickMesh.position.y = -0.15;
     torchGroup.add(stickMesh);
 
-    // 2. Coal / Ember Head (Voxel box at top of stick)
+    // Charcoal Ember Head
     const headGeo = new THREE.BoxGeometry(0.26, 0.32, 0.26);
     const headMat = new THREE.MeshStandardMaterial({
       map: coalTexture,
       roughness: 0.6,
       emissive: new THREE.Color(0xff4500),
-      emissiveIntensity: 0.75,
+      emissiveIntensity: 0.8,
     });
     const headMesh = new THREE.Mesh(headGeo, headMat);
     headMesh.position.y = 0.58;
     torchGroup.add(headMesh);
 
-    // 3. Glowing Ember Top Plate
+    // Glowing Ember Plate
     const emberTopGeo = new THREE.BoxGeometry(0.25, 0.04, 0.25);
-    const emberTopMat = new THREE.MeshBasicMaterial({
-      color: 0xffe066,
-    });
+    const emberTopMat = new THREE.MeshBasicMaterial({ color: 0xffe066 });
     const topEmber = new THREE.Mesh(emberTopGeo, emberTopMat);
     topEmber.position.y = 0.74;
     torchGroup.add(topEmber);
@@ -187,15 +207,15 @@ export const MinecraftTorch: React.FC = () => {
     const ambientLight = new THREE.AmbientLight(0xfff4e6, 0.9);
     scene.add(ambientLight);
 
-    const torchLight = new THREE.PointLight(0xff9922, 3.8, 6, 1.2);
+    const torchLight = new THREE.PointLight(0xff9922, 4.0, 7, 1.2);
     torchLight.position.set(0, 0.85, 0.2);
     torchGroup.add(torchLight);
 
-    const topFlareLight = new THREE.PointLight(0xffe680, 2.0, 3, 1.5);
+    const topFlareLight = new THREE.PointLight(0xffe680, 2.2, 4, 1.5);
     topFlareLight.position.set(0, 0.95, 0);
     torchGroup.add(topFlareLight);
 
-    // --- Minecraft Particle System (Flame & Smoke Pixels) ---
+    // --- Minecraft Particle System ---
     interface Particle {
       mesh: THREE.Mesh;
       velocity: THREE.Vector3;
@@ -233,7 +253,7 @@ export const MinecraftTorch: React.FC = () => {
 
       const mesh = new THREE.Mesh(isFlame || isSpark ? flameGeo : smokeGeo, mat);
 
-      const spread = isSpark ? 0.15 : 0.06;
+      const spread = isSpark ? 0.16 : 0.06;
       mesh.position.set(
         (Math.random() - 0.5) * spread,
         0.75 + Math.random() * 0.04,
@@ -270,17 +290,9 @@ export const MinecraftTorch: React.FC = () => {
     };
 
     // Pre-populate particles
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < 16; i++) {
       spawnParticle(i % 3 === 0 ? 'smoke' : 'flame');
     }
-
-    // --- Global Screen Mouse Tracking for Dynamic Parallax Leaning ---
-    const handleGlobalMouseMove = (e: MouseEvent) => {
-      const nx = (e.clientX / window.innerWidth) * 2 - 1;
-      const ny = -(e.clientY / window.innerHeight) * 2 + 1;
-      interactionState.current.mouseNormalized = { x: nx, y: ny };
-    };
-    window.addEventListener('mousemove', handleGlobalMouseMove, { passive: true });
 
     // --- Animation & Render Loop ---
     let animationFrameId: number;
@@ -292,7 +304,7 @@ export const MinecraftTorch: React.FC = () => {
       const delta = Math.min(clock.getDelta(), 0.1);
       const time = clock.getElapsedTime();
 
-      // 1. Particle Spawning
+      // Particle Spawning
       spawnTimer += delta;
       if (spawnTimer > 0.038) {
         spawnTimer = 0;
@@ -300,15 +312,15 @@ export const MinecraftTorch: React.FC = () => {
         if (Math.random() > 0.45) spawnParticle('smoke');
       }
 
-      // Check burst trigger from user click
-      if (interactionState.current.burstTrigger > 0) {
-        for (let i = 0; i < 16; i++) {
+      // Check spark burst trigger
+      if (state.current.burstTrigger > 0) {
+        for (let i = 0; i < 20; i++) {
           spawnParticle('spark');
         }
-        interactionState.current.burstTrigger = 0;
+        state.current.burstTrigger = 0;
       }
 
-      // 2. Particle Physics Update
+      // Update Particles
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.life += delta;
@@ -323,7 +335,6 @@ export const MinecraftTorch: React.FC = () => {
         }
 
         p.mesh.position.addScaledVector(p.velocity, delta);
-
         p.velocity.x *= 0.96;
         p.velocity.z *= 0.96;
 
@@ -340,72 +351,54 @@ export const MinecraftTorch: React.FC = () => {
         }
       }
 
-      // 3. Torch Dynamic Flicker
+      // Light Flicker
       const flicker =
-        Math.sin(time * 14) * 0.28 +
-        Math.sin(time * 28 + 1.2) * 0.16 +
-        (Math.random() - 0.5) * 0.12;
+        Math.sin(time * 14) * 0.3 +
+        Math.sin(time * 28 + 1.2) * 0.18 +
+        (Math.random() - 0.5) * 0.15;
 
-      const flareBoost = interactionState.current.lightFlicker > 1.0 ? 1.8 : 1.0;
-      torchLight.intensity = (3.8 + flicker) * flareBoost;
-      topFlareLight.intensity = (2.0 + flicker * 0.5) * flareBoost;
+      const flareBoost = state.current.lightFlicker > 1.0 ? 1.85 : 1.0;
+      torchLight.intensity = (4.0 + flicker) * flareBoost;
+      topFlareLight.intensity = (2.2 + flicker * 0.5) * flareBoost;
 
-      if (interactionState.current.lightFlicker > 1.0) {
-        interactionState.current.lightFlicker = Math.max(
-          1.0,
-          interactionState.current.lightFlicker - delta * 2.5
-        );
+      if (state.current.lightFlicker > 1.0) {
+        state.current.lightFlicker = Math.max(1.0, state.current.lightFlicker - delta * 2.5);
       }
 
-      // 4. Smooth Rotation, Parallax & Inertia
-      const state = interactionState.current;
+      // Smooth Physics Tilt on Drag (Sway Effect)
+      const st = state.current;
+      if (st.isDragging) {
+        // Tilt against drag velocity
+        const swayX = Math.min(Math.max(-st.velocity.y * 0.02, -0.4), 0.4);
+        const swayZ = Math.min(Math.max(-st.velocity.x * 0.025, -0.5), 0.5);
 
-      if (!state.isDragging) {
+        st.rotation.x += (st.targetRotation.x + swayX - st.rotation.x) * 0.18;
+        st.rotation.y += (st.targetRotation.y - st.rotation.y) * 0.18;
+        st.rotation.z += (swayZ - st.rotation.z) * 0.18;
+
+        // Decay velocity
+        st.velocity.x *= 0.85;
+        st.velocity.y *= 0.85;
+      } else {
         // Natural gentle idle breathing motion
         const idleRotX = Math.sin(time * 1.5) * 0.035;
         const idleRotY = Math.cos(time * 1.2) * 0.035;
 
-        // Combine cursor tracking with target rotation
-        const targetX = state.targetRotation.x - state.mouseNormalized.y * 0.35 + idleRotX;
-        const targetY = state.targetRotation.y + state.mouseNormalized.x * 0.45 + idleRotY;
-
-        state.rotation.x += (targetX - state.rotation.x) * 0.08;
-        state.rotation.y += (targetY - state.rotation.y) * 0.08;
-      } else {
-        // Apply angular velocity from drag
-        state.targetRotation.x += state.angularVelocity.x;
-        state.targetRotation.y += state.angularVelocity.y;
-        state.rotation.x = state.targetRotation.x;
-        state.rotation.y = state.targetRotation.y;
-
-        state.angularVelocity.x *= 0.88;
-        state.angularVelocity.y *= 0.88;
+        st.rotation.x += (st.targetRotation.x + idleRotX - st.rotation.x) * 0.08;
+        st.rotation.y += (st.targetRotation.y + idleRotY - st.rotation.y) * 0.08;
+        st.rotation.z += (0 - st.rotation.z) * 0.1;
       }
 
-      torchGroup.rotation.x = state.rotation.x;
-      torchGroup.rotation.y = state.rotation.y;
+      torchGroup.rotation.x = st.rotation.x;
+      torchGroup.rotation.y = st.rotation.y;
+      torchGroup.rotation.z = st.rotation.z;
 
       renderer.render(scene, camera);
     };
 
     animate();
 
-    // --- Resize Handler ---
-    const handleResize = () => {
-      if (!container) return;
-      const newWidth = container.clientWidth;
-      const newHeight = container.clientHeight;
-      camera.aspect = newWidth / newHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(newWidth, newHeight);
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    // --- Cleanup ---
     return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('mousemove', handleGlobalMouseMove);
       cancelAnimationFrame(animationFrameId);
 
       particles.forEach((p) => {
@@ -430,176 +423,122 @@ export const MinecraftTorch: React.FC = () => {
     };
   }, []);
 
-  // --- Mouse & Pointer Interaction Handlers for 3D Drag ---
+  // --- Drag & Click Handling with Real-time Collision Reporting ---
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    interactionState.current.isDragging = true;
-    interactionState.current.dragStart = { x: e.clientX, y: e.clientY };
+    // Only capture on primary mouse button
+    if (e.button !== 0) return;
+
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
+
+    const curX = pos.x;
+    const curY = pos.y;
+
+    state.current.isDragging = true;
+    state.current.dragStart = { x: e.clientX, y: e.clientY };
+    state.current.initialTorchPos = { x: curX, y: curY };
+    state.current.lastPointerPos = { x: e.clientX, y: e.clientY };
+    state.current.lastMoveTime = performance.now();
+    state.current.pointerMovedTotal = 0;
     setIsDragging(true);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (interactionState.current.isDragging) {
-      const dx = e.clientX - interactionState.current.dragStart.x;
-      const dy = e.clientY - interactionState.current.dragStart.y;
+    if (!state.current.isDragging) return;
 
-      interactionState.current.dragStart = { x: e.clientX, y: e.clientY };
+    const dx = e.clientX - state.current.dragStart.x;
+    const dy = e.clientY - state.current.dragStart.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    state.current.pointerMovedTotal = dist;
 
-      const sensitivity = 0.012;
-      interactionState.current.angularVelocity = {
-        x: dy * sensitivity,
-        y: dx * sensitivity,
-      };
+    // Calculate drag velocity for sway
+    const now = performance.now();
+    const dt = Math.max(now - state.current.lastMoveTime, 16);
+    const vx = ((e.clientX - state.current.lastPointerPos.x) / dt) * 16;
+    const vy = ((e.clientY - state.current.lastPointerPos.y) / dt) * 16;
 
-      interactionState.current.targetRotation.y += dx * sensitivity;
-      interactionState.current.targetRotation.x += dy * sensitivity;
-    }
+    state.current.velocity = { x: vx, y: vy };
+    state.current.lastPointerPos = { x: e.clientX, y: e.clientY };
+    state.current.lastMoveTime = now;
+
+    // Constrain position within viewport margins
+    const newX = Math.max(10, Math.min(window.innerWidth - 180, state.current.initialTorchPos.x + dx));
+    const newY = Math.max(10, Math.min(window.innerHeight - 260, state.current.initialTorchPos.y + dy));
+
+    setPos({ x: newX, y: newY });
+    setHasMoved(true);
+
+    // Calculate screen coordinate of the flame tip (top center of torch)
+    // Torch width = 160px, height = 240px. Flame tip is at ~ (x + 80, y + 42)
+    const flameX = newX + 80;
+    const flameY = newY + 42;
+    onFlameMove?.(flameX, flameY);
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     try {
-      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
     } catch {}
-    interactionState.current.isDragging = false;
+
+    const moved = state.current.pointerMovedTotal;
+    state.current.isDragging = false;
     setIsDragging(false);
-  };
 
-  const handleClick = () => {
-    interactionState.current.burstTrigger = 1;
-    interactionState.current.lightFlicker = 2.4;
-    setClickCount((c) => c + 1);
-    setIsFlaring(true);
-    playFlameSound();
-    setTimeout(() => setIsFlaring(false), 350);
-  };
-
-  const handleResetAngle = () => {
-    interactionState.current.targetRotation = { x: 0.18, y: -0.4 };
-    interactionState.current.angularVelocity = { x: 0, y: 0 };
-  };
-
-  // --- Carry Torch across screen (Follow mouse) mode ---
-  useEffect(() => {
-    if (!isCarrying) {
-      setCarryPos(null);
-      return;
+    // If released without significant drag movement (< 6px), it's a CLICK/FLARE!
+    if (moved < 6) {
+      state.current.burstTrigger = 1;
+      state.current.lightFlicker = 2.4;
+      setIsFlaring(true);
+      playFlameSound();
+      setTimeout(() => setIsFlaring(false), 350);
     }
-
-    const onMouseMove = (e: MouseEvent) => {
-      setCarryPos({ x: e.clientX - 160, y: e.clientY - 170 });
-    };
-
-    window.addEventListener('mousemove', onMouseMove);
-    return () => window.removeEventListener('mousemove', onMouseMove);
-  }, [isCarrying]);
+  };
 
   return (
     <div
-      ref={cardRef}
-      style={
-        isCarrying && carryPos
-          ? {
-              position: 'fixed',
-              left: `${carryPos.x}px`,
-              top: `${carryPos.y}px`,
-              zIndex: 9999,
-              pointerEvents: 'auto',
-            }
-          : undefined
-      }
-      className="relative flex flex-col items-center select-none group transition-all duration-100"
+      ref={containerRef}
+      style={{
+        position: 'fixed',
+        left: `${pos.x}px`,
+        top: `${pos.y}px`,
+        zIndex: 9999,
+        touchAction: 'none',
+      }}
+      className="select-none flex flex-col items-center pointer-events-auto transition-transform duration-75"
     >
-      {/* Warm ambient torch radial glow behind the canvas */}
+      {/* Warm ambient torch radial glow that moves with the torch */}
       <div
-        className={`absolute -inset-10 rounded-full pointer-events-none transition-all duration-300 ${
+        className={`absolute -inset-16 rounded-full pointer-events-none transition-all duration-300 ${
           isFlaring
-            ? 'bg-[radial-gradient(ellipse_at_center,rgba(255,160,30,0.32)_0%,rgba(255,90,0,0.14)_45%,transparent_70%)] scale-110'
-            : 'bg-[radial-gradient(ellipse_at_center,rgba(255,150,30,0.18)_0%,rgba(255,80,0,0.07)_45%,transparent_70%)]'
+            ? 'bg-[radial-gradient(ellipse_at_center,rgba(255,160,30,0.40)_0%,rgba(255,90,0,0.18)_45%,transparent_70%)] scale-125'
+            : 'bg-[radial-gradient(ellipse_at_center,rgba(255,150,30,0.22)_0%,rgba(255,80,0,0.08)_45%,transparent_70%)]'
         }`}
         style={{
-          filter: 'blur(32px)',
+          filter: 'blur(35px)',
         }}
       />
 
-      {/* Cyber-Minecraft Widget Card */}
-      <div className="relative z-10 w-[295px] xl:w-[335px] rounded-2xl bg-obsidian-950/75 backdrop-blur-xl border border-amber-500/25 shadow-[0_20px_50px_rgba(0,0,0,0.65),0_0_35px_rgba(255,140,0,0.1)] p-4 flex flex-col items-center overflow-hidden transition-all duration-300 hover:border-amber-500/45">
-        {/* Top Status Header */}
-        <div className="w-full flex items-center justify-between pb-2.5 mb-1 border-b border-white/[0.08]">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-sm bg-amber-400 animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.9)]" />
-            <span className="font-mono text-[10.5px] font-semibold tracking-wider text-amber-300 uppercase">
-              VOXEL TORCH 3D
-            </span>
-          </div>
+      {/* 3D WebGL Canvas (NO BOX, NO BORDERS, NO CARDS) */}
+      <div
+        ref={mountRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        className={`w-[160px] h-[240px] flex items-center justify-center relative touch-none ${
+          isDragging ? 'cursor-grabbing' : 'cursor-grab'
+        }`}
+        title="Hold & drag to move across text • Click to flare sparks"
+      />
 
-          <span className="font-mono text-[9.5px] text-titanium-400 uppercase tracking-wider">
-            {isCarrying ? 'CARRYING' : isDragging ? 'DRAGGING 360°' : 'ACTIVE'}
+      {/* Subtle, sleek helper hint when idle before initial move */}
+      {!hasMoved && !isDragging && (
+        <div className="absolute -bottom-7 pointer-events-none whitespace-nowrap animate-bounce">
+          <span className="px-2.5 py-1 rounded-full text-[10px] font-mono tracking-wider text-amber-300/90 bg-obsidian-950/80 border border-amber-500/30 backdrop-blur-md shadow-lg">
+            🔥 DRAG TO BURN WORDS
           </span>
         </div>
-
-        {/* 3D WebGL Canvas Container */}
-        <div
-          ref={mountRef}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onClick={handleClick}
-          className={`w-full h-[260px] xl:h-[285px] flex items-center justify-center relative touch-none ${
-            isDragging ? 'cursor-grabbing' : 'cursor-grab'
-          }`}
-          title="Click for sparks • Drag to rotate in 3D"
-        >
-          {/* 3D Depth Floor Grid underneath torch */}
-          <div className="absolute bottom-3 w-32 h-32 rounded-full border border-amber-500/15 bg-radial from-amber-500/10 to-transparent pointer-events-none opacity-60" />
-        </div>
-
-        {/* Interactive Controls Bar */}
-        <div className="w-full pt-2.5 mt-1 border-t border-white/[0.08] flex items-center justify-between gap-1.5">
-          <button
-            onClick={handleClick}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all duration-200 active:scale-95"
-            data-cursor="pointer"
-            title="Click to flare sparks"
-          >
-            <Flame className="w-3 h-3 text-amber-400" />
-            <span>Flare</span>
-            {clickCount > 0 && (
-              <span className="text-[9px] text-amber-400/80">({clickCount})</span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setIsCarrying(!isCarrying)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono transition-all duration-200 ${
-              isCarrying
-                ? 'bg-amber-400 text-obsidian-950 font-bold border border-amber-300 shadow-[0_0_15px_rgba(251,191,36,0.5)]'
-                : 'text-titanium-300 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10'
-            }`}
-            data-cursor="pointer"
-            title={isCarrying ? 'Dock torch back in place' : 'Move torch across the screen with your mouse'}
-          >
-            {isCarrying ? <Hand className="w-3 h-3 text-obsidian-950" /> : <Move className="w-3 h-3 text-titanium-400" />}
-            <span>{isCarrying ? 'Dock' : 'Carry'}</span>
-          </button>
-
-          <button
-            onClick={handleResetAngle}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-mono text-titanium-400 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 transition-colors active:scale-95"
-            data-cursor="pointer"
-            title="Reset 3D angle"
-          >
-            <RotateCw className="w-3 h-3 text-titanium-400" />
-            <span>Reset</span>
-          </button>
-        </div>
-
-        {/* Instruction Footer Hint */}
-        <div className="w-full text-center mt-2">
-          <p className="text-[10px] font-mono text-titanium-500 tracking-tight">
-            Drag to rotate 360° • Click for flare • 'Carry' to move
-          </p>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
