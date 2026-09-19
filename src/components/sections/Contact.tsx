@@ -1,0 +1,103 @@
+import React from 'react';
+import { ArrowRight, Mail, Github, Linkedin, ExternalLink, MessageSquare } from 'lucide-react';
+import { profileData } from '@/data/profile';
+
+export const Contact: React.FC = () => {
+  return (
+    <section id="contact" className="relative py-32 md:py-48 bg-obsidian-950 border-t border-white/[0.08] overflow-hidden">
+      {/* Subtle top spotlight */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-white/[0.02] blur-3xl pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 relative z-10">
+        <div className="max-w-4xl mx-auto text-center">
+          {/* Eyebrow */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono tracking-widest text-titanium-400 uppercase bg-white/[0.03] border border-white/[0.08] mb-8">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>07 // READY FOR NEW INITIATIVES</span>
+          </div>
+
+          {/* Large Statement */}
+          <h2 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter text-titanium-100 leading-[0.98] mb-8">
+            LET'S BUILD SOMETHING INTELLIGENT.
+          </h2>
+
+          <p className="text-lg sm:text-xl md:text-2xl text-titanium-300 font-light leading-relaxed max-w-2xl mx-auto mb-12">
+            Whether you are building an autonomous AI system, scaling a client application, or looking for an engineer with technical depth, let's talk.
+          </p>
+
+          {/* Primary CTA button */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+            <a
+              href={`mailto:${profileData.email}`}
+              className="group inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full text-sm sm:text-base font-mono font-medium tracking-wider bg-titanium-100 text-obsidian-950 hover:bg-white hover:shadow-[0_0_40px_rgba(255,255,255,0.2)] transition-all duration-300 w-full sm:w-auto"
+              data-cursor="pointer"
+            >
+              <span>START A CONVERSATION</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </a>
+
+            <a
+              href={profileData.socials.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2.5 px-7 py-4 rounded-full text-sm font-mono tracking-wider text-titanium-300 bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 transition-all duration-300 w-full sm:w-auto"
+              data-cursor="pointer"
+            >
+              <Linkedin className="w-4 h-4 text-titanium-400" />
+              <span>LinkedIn Profile</span>
+              <ExternalLink className="w-3.5 h-3.5 opacity-60" />
+            </a>
+          </div>
+
+          {/* Contact Direct Channels */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-12 border-t border-white/[0.08] max-w-3xl mx-auto">
+            <a
+              href={`mailto:${profileData.email}`}
+              className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/15 hover:bg-white/[0.04] transition-all text-left group"
+              data-cursor="pointer"
+            >
+              <span className="font-mono text-[10px] text-titanium-500 uppercase tracking-widest block mb-1">
+                DIRECT INBOX
+              </span>
+              <span className="text-sm font-semibold text-titanium-200 group-hover:text-white transition-colors block truncate">
+                {profileData.email}
+              </span>
+            </a>
+
+            <a
+              href={profileData.socials.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/15 hover:bg-white/[0.04] transition-all text-left group"
+              data-cursor="pointer"
+            >
+              <span className="font-mono text-[10px] text-titanium-500 uppercase tracking-widest block mb-1">
+                GITHUB CODEBASE
+              </span>
+              <span className="text-sm font-semibold text-titanium-200 group-hover:text-white transition-colors flex items-center justify-between">
+                <span>@HunainxAhmed</span>
+                <ExternalLink className="w-3.5 h-3.5 text-titanium-500" />
+              </span>
+            </a>
+
+            <a
+              href={profileData.socials.upwork}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/15 hover:bg-white/[0.04] transition-all text-left group"
+              data-cursor="pointer"
+            >
+              <span className="font-mono text-[10px] text-titanium-500 uppercase tracking-widest block mb-1">
+                UPWORK CONTRACTS
+              </span>
+              <span className="text-sm font-semibold text-titanium-200 group-hover:text-white transition-colors flex items-center justify-between">
+                <span>Top Rated</span>
+                <ExternalLink className="w-3.5 h-3.5 text-titanium-500" />
+              </span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
