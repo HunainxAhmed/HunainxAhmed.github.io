@@ -46,21 +46,6 @@ export const Contact: React.FC = () => {
             </motion.a>
 
             <motion.a
-              href="/assets/Hunain_Ahmed_CV.pdf"
-              download="Hunain_Ahmed_CV.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="inline-flex items-center justify-center gap-2.5 px-7 py-4 rounded-full text-sm font-mono tracking-wider text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500/60 transition-all duration-300 w-full sm:w-auto"
-              data-cursor="pointer"
-              title="Download ATS-Optimized CV (PDF)"
-            >
-              <FileDown className="w-4 h-4 text-emerald-400" />
-              <span>DOWNLOAD RESUME / CV</span>
-            </motion.a>
-
-            <motion.a
               href={profileData.socials.linkedin}
               target="_blank"
               rel="noopener noreferrer"
