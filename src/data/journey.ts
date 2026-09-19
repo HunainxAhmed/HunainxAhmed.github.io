@@ -62,7 +62,7 @@ export const journeyData: Milestone[] = [
     ]
   },
   {
-    year: "2023 — Present",
+    year: "2024 — Present",
     title: "BS in Artificial Intelligence",
     category: "Education",
     organization: "Bahria University Karachi",

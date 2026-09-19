@@ -126,5 +126,27 @@ export const projectsData: Project[] = [
     },
     featured: false,
     accent: "from-zinc-400 to-zinc-600"
+  },
+  {
+    id: "mindcare-ai",
+    number: "06",
+    title: "MindCare AI",
+    tagline: "AI Mental Health Therapist & Crisis Support Agent",
+    category: "AI & Autonomous Systems",
+    description: "A full-stack AI-powered mental health support system providing empathetic conversational responses, real-time emotional intent detection, crisis safety triage, and geolocation-based facility recommendations.",
+    technicalDetails: [
+      "Empathetic conversational agent pipeline fine-tuned for emotional sentiment and crisis risk classification",
+      "High-throughput FastAPI backend with SQLAlchemy ORM, SQLite persistence, and structured chat histories",
+      "Enterprise authentication layer combining Google OAuth 2.0 and cryptographically signed JWT sessions",
+      "Automated geolocation dispatch linking at-risk users with nearby accredited healthcare centers"
+    ],
+    technologies: ["React.js", "FastAPI", "Python", "AI / NLP", "SQLAlchemy", "JWT & OAuth", "Responsive UI"],
+    metrics: { label: "Response Mode", value: "Empathetic AI" },
+    links: {
+      github: "https://github.com/HunainxAhmed",
+      live: "https://github.com/HunainxAhmed"
+    },
+    featured: false,
+    accent: "from-teal-400/80 to-zinc-500"
   }
 ];

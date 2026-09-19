@@ -60,7 +60,7 @@ export const profileData: Profile = {
   education: {
     degree: "Bachelor of Science in Artificial Intelligence",
     institution: "Bahria University Karachi",
-    period: "2023 — Present",
+    period: "2024 — Present",
     details: "Deep exploration of neural networks, probability & statistics, computer vision, natural language processing, autonomous agents, and systems engineering."
   },
   stats: [
