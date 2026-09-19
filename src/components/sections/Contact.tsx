@@ -1,5 +1,6 @@
 import React from 'react';
-import { ArrowRight, Mail, Github, Linkedin, ExternalLink, MessageSquare } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowRight, Mail, Github, Linkedin, ExternalLink } from 'lucide-react';
 import { profileData } from '@/data/profile';
 
 export const Contact: React.FC = () => {
@@ -9,7 +10,13 @@ export const Contact: React.FC = () => {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-white/[0.02] blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 sm:px-8 relative z-10">
-        <div className="max-w-4xl mx-auto text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+          className="max-w-4xl mx-auto text-center"
+        >
           {/* Eyebrow */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono tracking-widest text-titanium-400 uppercase bg-white/[0.03] border border-white/[0.08] mb-8">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -27,33 +34,38 @@ export const Contact: React.FC = () => {
 
           {/* Primary CTA button */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <a
+            <motion.a
               href={`mailto:${profileData.email}`}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               className="group inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full text-sm sm:text-base font-mono font-medium tracking-wider bg-titanium-100 text-obsidian-950 hover:bg-white hover:shadow-[0_0_40px_rgba(255,255,255,0.2)] transition-all duration-300 w-full sm:w-auto"
               data-cursor="pointer"
             >
               <span>START A CONVERSATION</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </a>
+            </motion.a>
 
-            <a
+            <motion.a
               href={profileData.socials.linkedin}
               target="_blank"
               rel="noopener noreferrer"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               className="inline-flex items-center justify-center gap-2.5 px-7 py-4 rounded-full text-sm font-mono tracking-wider text-titanium-300 bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 transition-all duration-300 w-full sm:w-auto"
               data-cursor="pointer"
             >
               <Linkedin className="w-4 h-4 text-titanium-400" />
               <span>LinkedIn Profile</span>
               <ExternalLink className="w-3.5 h-3.5 opacity-60" />
-            </a>
+            </motion.a>
           </div>
 
           {/* Contact Direct Channels */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-12 border-t border-white/[0.08] max-w-3xl mx-auto">
-            <a
+            <motion.a
               href={`mailto:${profileData.email}`}
-              className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/15 hover:bg-white/[0.04] transition-all text-left group"
+              whileHover={{ y: -3 }}
+              className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/15 hover:bg-white/[0.04] transition-colors text-left group block"
               data-cursor="pointer"
             >
               <span className="font-mono text-[10px] text-titanium-500 uppercase tracking-widest block mb-1">
@@ -62,13 +74,14 @@ export const Contact: React.FC = () => {
               <span className="text-sm font-semibold text-titanium-200 group-hover:text-white transition-colors block truncate">
                 {profileData.email}
               </span>
-            </a>
+            </motion.a>
 
-            <a
+            <motion.a
               href={profileData.socials.github}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/15 hover:bg-white/[0.04] transition-all text-left group"
+              whileHover={{ y: -3 }}
+              className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/15 hover:bg-white/[0.04] transition-colors text-left group block"
               data-cursor="pointer"
             >
               <span className="font-mono text-[10px] text-titanium-500 uppercase tracking-widest block mb-1">
@@ -78,13 +91,14 @@ export const Contact: React.FC = () => {
                 <span>@HunainxAhmed</span>
                 <ExternalLink className="w-3.5 h-3.5 text-titanium-500" />
               </span>
-            </a>
+            </motion.a>
 
-            <a
+            <motion.a
               href={profileData.socials.upwork}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/15 hover:bg-white/[0.04] transition-all text-left group"
+              whileHover={{ y: -3 }}
+              className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/15 hover:bg-white/[0.04] transition-colors text-left group block"
               data-cursor="pointer"
             >
               <span className="font-mono text-[10px] text-titanium-500 uppercase tracking-widest block mb-1">
@@ -94,9 +108,9 @@ export const Contact: React.FC = () => {
                 <span>Available for Hire</span>
                 <ExternalLink className="w-3.5 h-3.5 text-titanium-500" />
               </span>
-            </a>
+            </motion.a>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

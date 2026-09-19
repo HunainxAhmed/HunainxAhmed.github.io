@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 interface SectionHeadingProps {
   number?: string;
@@ -18,7 +19,13 @@ export const SectionHeading: React.FC<SectionHeadingProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`mb-16 md:mb-24 ${align === 'center' ? 'text-center mx-auto' : 'text-left'} ${className}`}>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      className={`mb-16 md:mb-24 ${align === 'center' ? 'text-center mx-auto' : 'text-left'} ${className}`}
+    >
       {/* Eyebrow & Index */}
       <div className={`flex items-center gap-3 font-mono text-xs tracking-widest text-titanium-400 uppercase mb-4 ${align === 'center' ? 'justify-center' : ''}`}>
         {number && <span className="text-titanium-500 font-semibold">{number}</span>}
@@ -37,6 +44,6 @@ export const SectionHeading: React.FC<SectionHeadingProps> = ({
           {description}
         </p>
       )}
-    </div>
+    </motion.div>
   );
 };

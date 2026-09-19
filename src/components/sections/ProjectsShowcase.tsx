@@ -30,6 +30,7 @@ export const ProjectsShowcase: React.FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-100px' }}
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] as const }}
+              whileHover={{ y: -4, transition: { duration: 0.3 } }}
               className="group relative rounded-3xl bg-obsidian-900 border border-white/[0.08] hover:border-white/[0.18] p-6 sm:p-10 lg:p-14 transition-all duration-500"
               data-cursor="view"
               data-cursor-text="EXPLORE"
@@ -118,8 +119,8 @@ export const ProjectsShowcase: React.FC = () => {
                         <span className="w-2.5 h-2.5 rounded-full bg-white/10" />
                         <span className="w-2.5 h-2.5 rounded-full bg-white/10" />
                       </div>
-                      <span className="font-mono text-[10px] tracking-widest text-titanium-500 uppercase">
-                        ARCHITECTURE ENVIRONMENT // {project.id}.ts
+                      <span className="font-mono text-[10px] tracking-wider text-titanium-500 uppercase truncate px-2">
+                        RUNTIME // {project.id}.ts
                       </span>
                       {project.metrics && (
                         <span className="font-mono text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
@@ -138,10 +139,16 @@ export const ProjectsShowcase: React.FC = () => {
                               <span>TRACK 01 // VIDEO LAYER (CANVAS 2D)</span>
                               <span className="text-white">00:04:18 / 60 FPS</span>
                             </div>
-                            <div className="h-6 w-full bg-white/[0.04] rounded border border-white/10 flex items-center px-2 gap-1">
+                            <div className="relative h-6 w-full bg-white/[0.04] rounded border border-white/10 flex items-center px-2 gap-1 overflow-hidden">
                               <span className="h-3 w-16 bg-white/20 rounded-sm" />
                               <span className="h-3 w-32 bg-white/30 rounded-sm" />
                               <span className="h-3 flex-1 bg-white/10 rounded-sm" />
+                              {/* Subtle scanning playhead */}
+                              <motion.div
+                                animate={{ left: ['0%', '98%'] }}
+                                transition={{ duration: 4.5, repeat: Infinity, ease: 'linear' }}
+                                className="absolute top-0 bottom-0 w-[1.5px] bg-white shadow-[0_0_8px_rgba(255,255,255,0.7)] pointer-events-none"
+                              />
                             </div>
                           </div>
                           <div className="space-y-2">
@@ -151,34 +158,51 @@ export const ProjectsShowcase: React.FC = () => {
                             </div>
                             <div className="h-6 w-full bg-white/[0.03] rounded border border-white/5 flex items-center px-2 gap-1">
                               {[35, 60, 20, 80, 45, 90, 75, 40, 65, 85, 30, 95, 55, 40, 70, 85].map((h, i) => (
-                                <span
+                                <motion.span
                                   key={i}
-                                  className="w-1.5 bg-titanium-400/40 rounded-full"
+                                  animate={{ scaleY: [1, 1.2, 0.85, 1] }}
+                                  transition={{
+                                    duration: 2,
+                                    repeat: Infinity,
+                                    ease: 'easeInOut',
+                                    delay: i * 0.07,
+                                  }}
+                                  className="w-1.5 bg-titanium-400/50 rounded-full origin-bottom"
                                   style={{ height: `${h}%` }}
                                 />
                               ))}
                             </div>
                           </div>
-                          <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] text-xs font-mono text-titanium-300">
-                            <code>&gt; AI Auto-Captions: Synchronizing dynamic subtitle typography...</code>
+                          <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] text-xs font-mono text-titanium-300 flex items-center gap-1.5">
+                            <span>&gt; AI Auto-Captions: Synchronizing dynamic subtitle typography</span>
+                            <span className="inline-block w-1.5 h-3 bg-emerald-400 animate-pulse" />
                           </div>
                         </div>
                       )}
 
                       {project.id === 'trade-bot-gemini' && (
                         <div className="space-y-3 font-mono text-xs text-titanium-300">
-                          <div className="flex items-center justify-between p-2.5 rounded bg-white/[0.03] border border-white/10">
+                          <div className="flex items-center justify-between p-2.5 rounded bg-white/[0.03] border border-white/10 hover:border-white/15 transition-colors">
                             <span className="text-titanium-400">INPUT STREAM</span>
                             <span className="text-titanium-200">Real-Time Depth &amp; Macro Sentiment</span>
                           </div>
-                          <div className="flex items-center justify-between p-2.5 rounded bg-white/[0.03] border border-white/10">
+                          <div className="flex items-center justify-between p-2.5 rounded bg-white/[0.03] border border-white/10 hover:border-white/15 transition-colors">
                             <span className="text-titanium-400">AGENT INFERENCE</span>
-                            <span className="text-emerald-400">Google Gemini Multi-Modal Evaluator</span>
+                            <span className="text-emerald-400 flex items-center gap-1.5">
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400/60 opacity-75" />
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+                              </span>
+                              Google Gemini Multi-Modal Evaluator
+                            </span>
                           </div>
-                          <div className="p-3 rounded bg-obsidian-900 border border-white/[0.08] text-[11px] text-titanium-400 space-y-1">
+                          <div className="p-3 rounded bg-obsidian-900 border border-white/[0.08] text-[11px] text-titanium-400 space-y-1.5">
                             <p className="text-white/80">&gt; Reasoning: Volatility regime shift detected.</p>
                             <p>&gt; Action: Re-weighting exposure with dynamic stop-loss clamp.</p>
-                            <p className="text-emerald-400">&gt; Status: Strategy audited. Zero policy breaches.</p>
+                            <p className="text-emerald-400 flex items-center justify-between">
+                              <span>&gt; Status: Strategy audited. Zero policy breaches.</span>
+                              <span className="text-[9px] text-titanium-500 font-mono">LATENCY: 18ms</span>
+                            </p>
                           </div>
                         </div>
                       )}
@@ -186,17 +210,20 @@ export const ProjectsShowcase: React.FC = () => {
                       {project.id === 'pakistan-super-app' && (
                         <div className="space-y-3 font-mono text-xs text-titanium-300">
                           <div className="grid grid-cols-3 gap-2 text-center text-[10px]">
-                            <div className="p-2 rounded bg-white/[0.04] border border-white/10">
+                            <div className="p-2 rounded bg-white/[0.04] border border-white/10 hover:border-white/20 transition-colors">
                               <span className="text-titanium-400 block mb-1">DISPATCH</span>
                               <span className="text-white font-bold">&lt; 200ms</span>
                             </div>
-                            <div className="p-2 rounded bg-white/[0.04] border border-white/10">
+                            <div className="p-2 rounded bg-white/[0.04] border border-white/10 hover:border-white/20 transition-colors">
                               <span className="text-titanium-400 block mb-1">AUCTION</span>
                               <span className="text-white font-bold">P2P Bid</span>
                             </div>
-                            <div className="p-2 rounded bg-white/[0.04] border border-white/10">
+                            <div className="p-2 rounded bg-white/[0.04] border border-white/10 hover:border-white/20 transition-colors">
                               <span className="text-titanium-400 block mb-1">MAPS</span>
-                              <span className="text-white font-bold">Live GPS</span>
+                              <span className="text-emerald-400 font-bold flex items-center justify-center gap-1">
+                                <span className="w-1 h-1 rounded-full bg-emerald-400 animate-ping" />
+                                Live GPS
+                              </span>
                             </div>
                           </div>
                           <div className="p-3 rounded bg-white/[0.02] border border-white/[0.06] text-xs text-titanium-400 leading-relaxed">
@@ -207,11 +234,11 @@ export const ProjectsShowcase: React.FC = () => {
 
                       {project.id === 'movie-recommender-ai' && (
                         <div className="space-y-3 font-mono text-xs">
-                          <div className="flex items-center justify-between p-2.5 rounded bg-white/[0.03] border border-white/10">
+                          <div className="flex items-center justify-between p-2.5 rounded bg-white/[0.03] border border-white/10 hover:border-white/15 transition-colors">
                             <span className="text-titanium-400">VECTOR SPACE</span>
                             <span className="text-titanium-200">High-Dim NLP Plot Embeddings</span>
                           </div>
-                          <div className="flex items-center justify-between p-2.5 rounded bg-white/[0.03] border border-white/10">
+                          <div className="flex items-center justify-between p-2.5 rounded bg-white/[0.03] border border-white/10 hover:border-white/15 transition-colors">
                             <span className="text-titanium-400">ALGORITHM</span>
                             <span className="text-titanium-200">Cosine Similarity + Matrix Factorization</span>
                           </div>
@@ -223,11 +250,11 @@ export const ProjectsShowcase: React.FC = () => {
 
                       {project.id === 'neural-search' && (
                         <div className="space-y-3 font-mono text-xs">
-                          <div className="flex items-center justify-between p-2.5 rounded bg-white/[0.03] border border-white/10">
+                          <div className="flex items-center justify-between p-2.5 rounded bg-white/[0.03] border border-white/10 hover:border-white/15 transition-colors">
                             <span className="text-titanium-400">INDEXING</span>
                             <span className="text-titanium-200">PostgreSQL + pgvector (HNSW)</span>
                           </div>
-                          <div className="flex items-center justify-between p-2.5 rounded bg-white/[0.03] border border-white/10">
+                          <div className="flex items-center justify-between p-2.5 rounded bg-white/[0.03] border border-white/10 hover:border-white/15 transition-colors">
                             <span className="text-titanium-400">PIPELINE</span>
                             <span className="text-titanium-200">Hybrid Dense-Sparse RRF</span>
                           </div>
@@ -240,7 +267,10 @@ export const ProjectsShowcase: React.FC = () => {
 
                     {/* Window Status Footer */}
                     <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between font-mono text-[10px] text-titanium-500">
-                      <span>STATUS // STABLE DEPLOYMENT</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/80 animate-pulse" />
+                        <span>STATUS // STABLE DEPLOYMENT</span>
+                      </div>
                       <span>ENV // PRODUCTION</span>
                     </div>
                   </div>

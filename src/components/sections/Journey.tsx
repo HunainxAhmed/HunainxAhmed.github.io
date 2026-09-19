@@ -1,7 +1,7 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { SectionHeading } from '@/components/common/SectionHeading';
 import { journeyData } from '@/data/journey';
-import { Calendar, Award, CheckCircle } from 'lucide-react';
 
 export const Journey: React.FC = () => {
   return (
@@ -18,9 +18,18 @@ export const Journey: React.FC = () => {
         {/* Editorial Vertical Timeline */}
         <div className="relative max-w-4xl mx-auto pl-6 sm:pl-10 border-l border-white/[0.08] space-y-16">
           {journeyData.map((item, idx) => (
-            <div key={idx} className="relative group">
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, x: -16 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: '-50px' }}
+              transition={{ duration: 0.55, delay: idx * 0.06, ease: [0.16, 1, 0.3, 1] }}
+              className="relative group"
+            >
               {/* Timeline Marker Dot */}
-              <div className="absolute -left-[31px] sm:-left-[47px] top-1.5 w-3.5 h-3.5 rounded-full bg-obsidian-950 border-2 border-titanium-400 group-hover:border-white group-hover:scale-125 transition-all duration-300" />
+              <div className="absolute -left-[31px] sm:-left-[47px] top-1.5 w-3.5 h-3.5 rounded-full bg-obsidian-950 border-2 border-titanium-400 group-hover:border-white group-hover:scale-125 transition-all duration-300 flex items-center justify-center">
+                {idx === 0 && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+              </div>
 
               {/* Milestone Header */}
               <div className="flex flex-wrap items-center gap-3 mb-3">
@@ -54,7 +63,7 @@ export const Journey: React.FC = () => {
                   </div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

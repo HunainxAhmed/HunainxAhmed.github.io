@@ -89,7 +89,7 @@ export const Hero: React.FC = () => {
   // Dynamic cycling specializations
   const specializations = [
     'Deep Learning, LLMs & Autonomous Agents',
-    'High-Throughput Microservices & Scalable APIs',
+    'High-Throughput Microservices & APIs',
     'Client-Side 60fps Canvas & Media Engines',
     'Applied Neural Research to Production UX',
   ];
@@ -162,20 +162,20 @@ export const Hero: React.FC = () => {
             </motion.p>
 
             {/* Dynamic Morphing Specialization Cycler */}
-            <div className="min-h-[2rem] sm:h-9 flex items-center overflow-hidden">
+            <div className="min-h-[1.75rem] sm:h-8 flex items-center overflow-hidden">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeSpecIndex}
-                  initial={{ y: 20, opacity: 0, filter: 'blur(4px)' }}
+                  initial={{ y: 16, opacity: 0, filter: 'blur(3px)' }}
                   animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
-                  exit={{ y: -20, opacity: 0, filter: 'blur(4px)' }}
+                  exit={{ y: -16, opacity: 0, filter: 'blur(3px)' }}
                   transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex items-center gap-2 text-xs sm:text-base md:text-xl font-mono text-titanium-400"
+                  className="flex items-center gap-2.5 text-xs sm:text-[13px] md:text-sm font-mono text-titanium-400 tracking-normal"
                 >
-                  <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-400/90 px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 shrink-0">
+                  <span className="text-[10px] font-mono font-medium text-emerald-400/90 px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 shrink-0">
                     0{activeSpecIndex + 1}
                   </span>
-                  <span className="text-titanium-300 truncate sm:overflow-visible">
+                  <span className="text-titanium-300">
                     {specializations[activeSpecIndex]}
                   </span>
                 </motion.div>

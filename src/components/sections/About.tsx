@@ -18,7 +18,13 @@ export const About: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
           {/* Left Column: Authentic Portrait with Cinematic Lighting */}
-          <div className="lg:col-span-5 relative">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+            className="lg:col-span-5 relative"
+          >
             <div className="relative mx-auto max-w-sm rounded-3xl overflow-hidden bg-gradient-to-b from-white/[0.08] to-transparent p-1">
               <div className="relative rounded-[22px] overflow-hidden bg-obsidian-900 border border-white/10 shadow-2xl">
                 {/* Subtle dark gradient overlay to blend portrait seamlessly into the dark aesthetic */}
@@ -48,10 +54,16 @@ export const About: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Right Column: Confident Technical Narrative */}
-          <div className="lg:col-span-7 flex flex-col justify-between space-y-8">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.75, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            className="lg:col-span-7 flex flex-col justify-between space-y-8"
+          >
             <div className="space-y-6">
               <h3 className="text-2xl sm:text-3xl font-semibold tracking-tight text-titanium-100 leading-snug">
                 I engineer software from first principles — transforming mathematical abstractions into dependable digital products.
@@ -70,8 +82,12 @@ export const About: React.FC = () => {
               </div>
             </div>
 
-            {/* Academic Credentials Box */}
-            <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08]">
+            {/* Academic Credentials Box with subtle hover */}
+            <motion.div
+              whileHover={{ y: -3, borderColor: 'rgba(255,255,255,0.16)' }}
+              transition={{ duration: 0.25 }}
+              className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] transition-colors"
+            >
               <div className="flex items-start gap-4">
                 <div className="p-3 rounded-xl bg-white/[0.04] border border-white/10 text-titanium-300">
                   <GraduationCap className="w-6 h-6" />
@@ -91,12 +107,18 @@ export const About: React.FC = () => {
                   </p>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Stats Metrics Matrix */}
             <div className="grid grid-cols-3 gap-4 pt-6 border-t border-white/[0.08]">
               {profileData.stats.map((stat, sIdx) => (
-                <div key={sIdx}>
+                <motion.div
+                  key={sIdx}
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: 0.2 + sIdx * 0.08 }}
+                >
                   <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-titanium-100 block font-mono">
                     {stat.value}
                   </span>
@@ -106,10 +128,10 @@ export const About: React.FC = () => {
                   <span className="text-[11px] text-titanium-500 hidden sm:block mt-0.5">
                     {stat.detail}
                   </span>
-                </div>
+                </motion.div>
               ))}
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
