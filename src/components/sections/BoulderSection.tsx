@@ -71,11 +71,12 @@ export const BoulderSection: React.FC = () => {
         </div>
       </div>
 
-      {/* Cinematic Pinned Scroll Video */}
+      {/* Cinematic Pinned Scroll Video (60fps Canvas Frame Sequence) */}
       <CinematicScrollVideo
-        videoSrc="/assets/Animation.mp4"
-        posterSrc="/assets/poster.jpg"
-        pinDuration="+=280%"
+        frameCount={240}
+        framePath={(i) => `/assets/boulder-frames/frame_${String(i).padStart(3, '0')}.webp`}
+        posterSrc="/assets/poster.webp"
+        pinDuration="+=300%"
         overlaySteps={overlaySteps}
         enableTilt={true}
       />
