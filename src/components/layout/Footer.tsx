@@ -137,7 +137,7 @@ export const Footer: React.FC = () => {
                   className="inline-flex items-center gap-2 text-titanium-300 hover:text-white transition-colors group"
                 >
                   <ExternalLink className="w-4 h-4 text-titanium-500 group-hover:text-white transition-colors" />
-                  <span>Upwork (Top Rated Freelancer)</span>
+                  <span>Upwork (Available for Hire)</span>
                 </a>
                 <a
                   href={`mailto:${profileData.email}`}

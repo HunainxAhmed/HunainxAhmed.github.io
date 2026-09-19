@@ -91,7 +91,7 @@ export const Contact: React.FC = () => {
                 UPWORK CONTRACTS
               </span>
               <span className="text-sm font-semibold text-titanium-200 group-hover:text-white transition-colors flex items-center justify-between">
-                <span>Top Rated</span>
+                <span>Available for Hire</span>
                 <ExternalLink className="w-3.5 h-3.5 text-titanium-500" />
               </span>
             </a>
