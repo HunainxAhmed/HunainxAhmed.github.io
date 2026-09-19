@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ArrowUpRight } from 'lucide-react';
+import { Menu, X, ArrowUpRight, FileDown } from 'lucide-react';
 import { profileData } from '@/data/profile';
 
 interface NavbarProps {
@@ -65,7 +65,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate }) => {
             <span className="font-bold text-lg sm:text-xl tracking-tight text-titanium-100 group-hover:text-white transition-colors duration-200">
               {profileData.name}
             </span>
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono tracking-wider bg-white/[0.04] border border-white/[0.08] text-titanium-400">
+            <span className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono tracking-wider bg-white/[0.04] border border-white/[0.08] text-titanium-400">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               AVAILABLE
             </span>
@@ -88,7 +88,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate }) => {
           </nav>
 
           {/* Right Action CTA */}
-          <div className="hidden sm:flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-3">
+            <a
+              href="/assets/Hunain_Ahmed_CV.pdf"
+              download="Hunain_Ahmed_CV.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-mono tracking-wider text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500/50 transition-all duration-200"
+              data-cursor="pointer"
+              title="Download ATS-Optimized CV (PDF)"
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              <span>Resume / CV</span>
+            </a>
+
             <a
               href="#contact"
               onClick={(e) => handleLinkClick(e, '#contact')}
@@ -125,7 +138,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate }) => {
               <span className="font-mono text-xs tracking-widest text-titanium-500 uppercase">
                 NAVIGATION
               </span>
-              <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-4">
                 {navLinks.map((link, idx) => (
                   <motion.a
                     key={link.label}
@@ -133,13 +146,27 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate }) => {
                     onClick={(e) => handleLinkClick(e, link.href)}
                     initial={{ opacity: 0, x: -16 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.05 + 0.1 }}
-                    className="text-2xl font-semibold tracking-tight text-titanium-200 hover:text-white flex items-center justify-between group py-1"
+                    transition={{ delay: idx * 0.04 + 0.1 }}
+                    className="text-2xl font-semibold tracking-tight text-titanium-200 hover:text-white flex items-center justify-between group py-0.5"
                   >
                     <span>{link.label}</span>
                     <ArrowUpRight className="w-5 h-5 text-titanium-500 group-hover:text-white transition-colors" />
                   </motion.a>
                 ))}
+              </div>
+
+              {/* Mobile CV Download Action */}
+              <div className="pt-2">
+                <a
+                  href="/assets/Hunain_Ahmed_CV.pdf"
+                  download="Hunain_Ahmed_CV.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl font-mono text-xs tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-medium"
+                >
+                  <FileDown className="w-4 h-4" />
+                  <span>Download Curriculum Vitae (PDF)</span>
+                </a>
               </div>
             </div>
 

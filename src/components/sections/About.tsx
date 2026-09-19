@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { SectionHeading } from '@/components/common/SectionHeading';
 import { profileData } from '@/data/profile';
-import { GraduationCap, MapPin, Terminal, Award, ArrowUpRight } from 'lucide-react';
+import { GraduationCap, MapPin, Terminal, Award, ArrowUpRight, FileDown } from 'lucide-react';
 
 export const About: React.FC = () => {
   return (
@@ -88,23 +88,40 @@ export const About: React.FC = () => {
               transition={{ duration: 0.25 }}
               className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.08] transition-colors"
             >
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-xl bg-white/[0.04] border border-white/10 text-titanium-300">
-                  <GraduationCap className="w-6 h-6" />
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-white/[0.04] border border-white/10 text-titanium-300 shrink-0">
+                    <GraduationCap className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="font-mono text-xs text-titanium-500 uppercase tracking-wider block mb-1">
+                      FORMAL FOUNDATION
+                    </span>
+                    <h4 className="text-lg font-bold text-titanium-100">
+                      {profileData.education.degree}
+                    </h4>
+                    <p className="text-sm text-titanium-300 font-mono mt-0.5">
+                      {profileData.education.institution} • {profileData.education.period}
+                    </p>
+                    <p className="text-xs text-titanium-400 mt-2 leading-relaxed">
+                      {profileData.education.details}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <span className="font-mono text-xs text-titanium-500 uppercase tracking-wider block mb-1">
-                    FORMAL FOUNDATION
-                  </span>
-                  <h4 className="text-lg font-bold text-titanium-100">
-                    {profileData.education.degree}
-                  </h4>
-                  <p className="text-sm text-titanium-300 font-mono mt-0.5">
-                    {profileData.education.institution} • {profileData.education.period}
-                  </p>
-                  <p className="text-xs text-titanium-400 mt-2 leading-relaxed">
-                    {profileData.education.details}
-                  </p>
+
+                <div className="shrink-0 pt-1 sm:pt-0">
+                  <a
+                    href="/assets/Hunain_Ahmed_CV.pdf"
+                    download="Hunain_Ahmed_CV.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono tracking-wider bg-white/[0.05] hover:bg-white/[0.1] text-titanium-200 border border-white/10 hover:border-emerald-500/40 hover:text-emerald-400 transition-all duration-200"
+                    title="Download ATS-Optimized CV (PDF)"
+                    data-cursor="pointer"
+                  >
+                    <FileDown className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Download CV</span>
+                  </a>
                 </div>
               </div>
             </motion.div>

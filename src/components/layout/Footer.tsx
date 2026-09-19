@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowUp, Github, Linkedin, Mail, ExternalLink } from 'lucide-react';
+import { ArrowUp, Github, Linkedin, Mail, ExternalLink, FileDown } from 'lucide-react';
 import { profileData } from '@/data/profile';
 
 export const Footer: React.FC = () => {
@@ -145,6 +145,17 @@ export const Footer: React.FC = () => {
                 >
                   <Mail className="w-4 h-4 text-titanium-500 group-hover:text-white transition-colors" />
                   <span>{profileData.email}</span>
+                </a>
+                <a
+                  href="/assets/Hunain_Ahmed_CV.pdf"
+                  download="Hunain_Ahmed_CV.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-emerald-400 hover:text-emerald-300 transition-colors group"
+                  title="Download ATS-Optimized CV"
+                >
+                  <FileDown className="w-4 h-4 text-emerald-400 group-hover:translate-y-0.5 transition-transform" />
+                  <span>Curriculum Vitae (PDF)</span>
                 </a>
               </div>
             </div>

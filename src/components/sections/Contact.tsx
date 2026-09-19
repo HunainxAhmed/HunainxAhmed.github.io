@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Mail, Github, Linkedin, ExternalLink } from 'lucide-react';
+import { ArrowRight, Mail, Github, Linkedin, ExternalLink, FileDown } from 'lucide-react';
 import { profileData } from '@/data/profile';
 
 export const Contact: React.FC = () => {
@@ -32,7 +32,7 @@ export const Contact: React.FC = () => {
             Whether you are building an autonomous AI system, scaling a client application, or looking for an engineer with technical depth, let's talk.
           </p>
 
-          {/* Primary CTA button */}
+          {/* Primary CTA buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
             <motion.a
               href={`mailto:${profileData.email}`}
@@ -43,6 +43,21 @@ export const Contact: React.FC = () => {
             >
               <span>START A CONVERSATION</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </motion.a>
+
+            <motion.a
+              href="/assets/Hunain_Ahmed_CV.pdf"
+              download="Hunain_Ahmed_CV.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="inline-flex items-center justify-center gap-2.5 px-7 py-4 rounded-full text-sm font-mono tracking-wider text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500/60 transition-all duration-300 w-full sm:w-auto"
+              data-cursor="pointer"
+              title="Download ATS-Optimized CV (PDF)"
+            >
+              <FileDown className="w-4 h-4 text-emerald-400" />
+              <span>DOWNLOAD RESUME / CV</span>
             </motion.a>
 
             <motion.a
@@ -61,7 +76,7 @@ export const Contact: React.FC = () => {
           </div>
 
           {/* Contact Direct Channels */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-12 border-t border-white/[0.08] max-w-3xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-12 border-t border-white/[0.08] max-w-4xl mx-auto">
             <motion.a
               href={`mailto:${profileData.email}`}
               whileHover={{ y: -3 }}
@@ -107,6 +122,25 @@ export const Contact: React.FC = () => {
               <span className="text-sm font-semibold text-titanium-200 group-hover:text-white transition-colors flex items-center justify-between">
                 <span>Available for Hire</span>
                 <ExternalLink className="w-3.5 h-3.5 text-titanium-500" />
+              </span>
+            </motion.a>
+
+            <motion.a
+              href="/assets/Hunain_Ahmed_CV.pdf"
+              download="Hunain_Ahmed_CV.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              whileHover={{ y: -3 }}
+              className="p-5 rounded-xl bg-white/[0.02] border border-emerald-500/20 hover:border-emerald-500/40 hover:bg-emerald-500/[0.04] transition-colors text-left group block"
+              data-cursor="pointer"
+              title="Download ATS-Optimized CV"
+            >
+              <span className="font-mono text-[10px] text-emerald-400 uppercase tracking-widest block mb-1">
+                OFFICIAL RESUME
+              </span>
+              <span className="text-sm font-semibold text-titanium-200 group-hover:text-emerald-300 transition-colors flex items-center justify-between">
+                <span>Download PDF</span>
+                <FileDown className="w-3.5 h-3.5 text-emerald-400" />
               </span>
             </motion.a>
           </div>

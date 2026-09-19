@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowDown, Terminal, Sparkles } from 'lucide-react';
+import { ArrowDown, Terminal, Sparkles, ArrowUpRight, FileDown } from 'lucide-react';
 import { profileData } from '@/data/profile';
 
 // Scramble text effect on initial load for cybernetic/AI engineering feel
@@ -202,12 +202,42 @@ export const Hero: React.FC = () => {
             ))}
           </p>
 
+          {/* Action Row: Explore Collaboration & Download Resume / CV */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 1.0 }}
+            className="mt-8 flex flex-wrap items-center gap-3.5"
+          >
+            <a
+              href="#contact"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-mono tracking-wider bg-white text-obsidian-950 font-semibold hover:bg-titanium-200 transition-colors"
+              data-cursor="pointer"
+            >
+              <span>EXPLORE COLLABORATION</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </a>
+
+            <a
+              href="/assets/Hunain_Ahmed_CV.pdf"
+              download="Hunain_Ahmed_CV.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-mono tracking-wider text-titanium-200 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-emerald-500/40 hover:text-white transition-all duration-200"
+              data-cursor="pointer"
+              title="Download ATS-Optimized CV (PDF)"
+            >
+              <FileDown className="w-3.5 h-3.5 text-emerald-400" />
+              <span>DOWNLOAD RESUME / CV</span>
+            </a>
+          </motion.div>
+
           {/* Interactive Tech Pills with gentle micro-interactions */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 1.1 }}
-            className="mt-8 flex flex-wrap items-center gap-3"
+            transition={{ duration: 0.7, delay: 1.15 }}
+            className="mt-6 flex flex-wrap items-center gap-3"
           >
             {[
               'Python',

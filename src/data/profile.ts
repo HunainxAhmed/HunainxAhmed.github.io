@@ -8,6 +8,7 @@ export interface Profile {
   philosophyIntro: string;
   philosophyDomains: string[];
   location: string;
+  phone: string;
   status: string;
   email: string;
   socials: {
@@ -48,8 +49,9 @@ export const profileData: Profile = {
     "Frontend Engineering"
   ],
   location: "Karachi, Pakistan",
+  phone: "+92 3708607811",
   status: "Available for select roles & AI engineering initiatives",
-  email: "hello@hunainahmed.dev",
+  email: "hunainahmed984@gmail.com",
   socials: {
     github: "https://github.com/HunainxAhmed",
     linkedin: "https://www.linkedin.com/in/hunain-ahmed-a654793b1/",
