@@ -18,6 +18,7 @@ export default defineConfig({
           'vendor-react': ['react', 'react-dom'],
           'vendor-animation': ['gsap', '@gsap/react', 'framer-motion', 'lenis'],
           'vendor-icons': ['lucide-react'],
+          'vendor-three': ['three'],
         },
       },
     },

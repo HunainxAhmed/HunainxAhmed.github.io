@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowDown, Terminal, Sparkles, ArrowUpRight, FileDown } from 'lucide-react';
 import { profileData } from '@/data/profile';
+import { MinecraftTorch } from '@/components/3d/MinecraftTorch';
 
 // Scramble text effect on initial load for cybernetic/AI engineering feel
 const ScrambleText: React.FC<{ targetText: string; delay?: number; className?: string }> = ({
@@ -132,8 +133,8 @@ export const Hero: React.FC = () => {
       <div className="w-full max-w-7xl mx-auto" />
 
       {/* Main Center Content */}
-      <div className="w-full max-w-7xl mx-auto py-12 relative z-10">
-        <div className="max-w-4xl">
+      <div className="w-full max-w-7xl mx-auto py-8 sm:py-12 relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10 xl:gap-14">
+        <div className="max-w-3xl xl:max-w-4xl">
           {/* Eyebrow with animated decoded typography */}
           <motion.div
             initial={{ opacity: 0, x: -10 }}
@@ -259,6 +260,16 @@ export const Hero: React.FC = () => {
             ))}
           </motion.div>
         </div>
+
+        {/* 3D Interactive Minecraft Torch Widget (Desktop Only) */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, x: 25 }}
+          animate={{ opacity: 1, scale: 1, x: 0 }}
+          transition={{ duration: 0.85, delay: 0.75, ease: [0.16, 1, 0.3, 1] }}
+          className="hidden lg:flex shrink-0 items-center justify-center self-center"
+        >
+          <MinecraftTorch />
+        </motion.div>
       </div>
 
       {/* Bottom Row: Microcopy and Scroll Prompt */}
