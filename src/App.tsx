@@ -10,6 +10,7 @@ import { ProjectsShowcase } from '@/components/sections/ProjectsShowcase';
 import { Capabilities } from '@/components/sections/Capabilities';
 import { About } from '@/components/sections/About';
 import { Journey } from '@/components/sections/Journey';
+import { Hobbies } from '@/components/sections/Hobbies';
 import { Contact } from '@/components/sections/Contact';
 
 export const App: React.FC = () => {
@@ -47,7 +48,10 @@ export const App: React.FC = () => {
         {/* 07 // JOURNEY & TIMELINE */}
         <Journey />
 
-        {/* 08 // CONTACT CONCLUSION */}
+        {/* 08 // HOBBIES & PERSPECTIVES */}
+        <Hobbies />
+
+        {/* 09 // CONTACT CONCLUSION */}
         <Contact />
       </main>
 
