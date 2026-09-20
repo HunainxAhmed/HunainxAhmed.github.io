@@ -47,8 +47,8 @@ export const RealisticTorch: React.FC<RealisticTorchProps> = ({
     velocity: { x: 0, y: 0 },
     lastPointerPos: { x: 0, y: 0 },
     lastMoveTime: 0,
-    rotation: { x: 0.15, y: -0.35, z: 0 },
-    targetRotation: { x: 0.15, y: -0.35, z: 0 },
+    rotation: { x: 0.22, y: -0.32, z: 0.28 },
+    targetRotation: { x: 0.22, y: -0.32, z: 0.28 },
     burstTrigger: 0,
     lightFlicker: 1.0,
     pointerMovedTotal: 0,
@@ -376,11 +376,11 @@ export const RealisticTorch: React.FC<RealisticTorchProps> = ({
     scene.add(ambientLight);
 
     const torchPointLight = new THREE.PointLight(0xff7722, 2.8, 6.0);
-    torchPointLight.position.set(0, 0.95, 0.2);
-    scene.add(torchPointLight);
+    torchPointLight.position.set(0, 0.95, 0.15);
+    torchGroup.add(torchPointLight);
 
-    // Default initial rotation
-    torchGroup.rotation.set(0.18, -0.32, 0.05);
+    // Natural inward tilt: angled ~16° inwards (z: 0.28 rad) with forward pitch (x: 0.22)
+    torchGroup.rotation.set(0.22, -0.32, 0.28);
 
     // --- Render Loop ---
     let animationFrameId: number;
@@ -420,18 +420,20 @@ export const RealisticTorch: React.FC<RealisticTorchProps> = ({
       st.burstTrigger *= 0.92;
       st.lightFlicker += (1.0 - st.lightFlicker) * 0.08;
 
-      // Update 3D Ember Particles
+      // Update 3D Ember Particles relative to tilted torch head
       emberParticles.forEach((p) => {
         p.life -= delta * (0.8 + Math.random() * 0.4);
         if (p.life <= 0) {
           p.life = 1.0;
           const angle = Math.random() * Math.PI * 2;
           const r = Math.random() * 0.06;
-          p.mesh.position.set(
-            torchGroup.position.x + Math.cos(angle) * r,
-            torchGroup.position.y + 0.85 + Math.random() * 0.1,
-            torchGroup.position.z + Math.sin(angle) * r
+          const localEmber = new THREE.Vector3(
+            Math.cos(angle) * r,
+            0.9 + Math.random() * 0.12,
+            Math.sin(angle) * r
           );
+          const worldEmber = torchGroup.localToWorld(localEmber);
+          p.mesh.position.copy(worldEmber);
           p.vx = (Math.random() - 0.5) * 0.18 + st.velocity.x * 0.02;
           p.vy = 0.45 + Math.random() * 0.55;
           p.vz = (Math.random() - 0.5) * 0.18 + st.velocity.y * 0.02;
@@ -443,15 +445,15 @@ export const RealisticTorch: React.FC<RealisticTorchProps> = ({
         }
       });
 
-      // Smooth inertia rotation & drag sway
+      // Smooth inertia rotation & drag sway with natural inward tilt baseline
       if (st.isDragging) {
-        st.rotation.y += (-0.35 + st.velocity.x * 0.05 - st.rotation.y) * 0.15;
-        st.rotation.x += (0.15 + st.velocity.y * 0.05 - st.rotation.x) * 0.15;
-        st.rotation.z += (-st.velocity.x * 0.04 - st.rotation.z) * 0.15;
+        st.rotation.y += (-0.32 + st.velocity.x * 0.04 - st.rotation.y) * 0.15;
+        st.rotation.x += (0.22 + st.velocity.y * 0.04 - st.rotation.x) * 0.15;
+        st.rotation.z += (0.28 - st.velocity.x * 0.04 - st.rotation.z) * 0.15;
       } else {
-        st.rotation.y += (-0.35 - st.rotation.y) * 0.08;
-        st.rotation.x += (0.15 - st.rotation.x) * 0.08;
-        st.rotation.z += (0 - st.rotation.z) * 0.08;
+        st.rotation.y += (-0.32 - st.rotation.y) * 0.08;
+        st.rotation.x += (0.22 - st.rotation.x) * 0.08;
+        st.rotation.z += (0.28 - st.rotation.z) * 0.08;
       }
 
       torchGroup.rotation.x = st.rotation.x;
@@ -545,8 +547,8 @@ export const RealisticTorch: React.FC<RealisticTorchProps> = ({
     setPos({ x: newX, y: newY });
     setHasMoved(true);
 
-    // Calculate Hero-relative coordinate of the flame tip
-    const flameX = newX + 80;
+    // Calculate Hero-relative coordinate of the tilted flame tip
+    const flameX = newX + 56;
     const flameY = newY + 36;
     onFlameMove?.(flameX, flameY);
   };
