@@ -15,17 +15,17 @@ export const RealisticTorch: React.FC<RealisticTorchProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const mountRef = useRef<HTMLDivElement>(null);
 
-  // Resting position: comfortably on far right of Hero section (fills open space away from "Ahmed")
+  // Resting position: comfortably on mid-right of Hero section (matching screenshot 2)
   const [pos, setPos] = useState<{ x: number; y: number }>(() => {
     if (typeof window !== 'undefined') {
       const width = heroBounds?.width ?? window.innerWidth;
       const height = heroBounds?.height ?? window.innerHeight;
       return {
-        x: Math.max(width * 0.80, width - 260),
-        y: Math.max(100, height * 0.24),
+        x: Math.max(width * 0.77, width - 250),
+        y: Math.max(260, height * 0.44),
       };
     }
-    return { x: 920, y: 200 };
+    return { x: 960, y: 350 };
   });
 
   const posRef = useRef(pos);
@@ -120,8 +120,8 @@ export const RealisticTorch: React.FC<RealisticTorchProps> = ({
         const width = heroBounds?.width ?? window.innerWidth;
         const height = heroBounds?.height ?? window.innerHeight;
         setPos({
-          x: Math.max(width * 0.80, width - 260),
-          y: Math.max(100, height * 0.24),
+          x: Math.max(width * 0.77, width - 250),
+          y: Math.max(260, height * 0.44),
         });
       }
     };
@@ -612,17 +612,7 @@ export const RealisticTorch: React.FC<RealisticTorchProps> = ({
         className={`w-[160px] h-[260px] flex items-center justify-center relative touch-none select-none ${
           isDragging ? 'cursor-grabbing' : 'cursor-grab'
         }`}
-        title="Hold & drag torch to explore"
       />
-
-      {/* Subtle helper hint */}
-      {!hasMoved && !isDragging && (
-        <div className="absolute -bottom-7 pointer-events-none whitespace-nowrap animate-bounce">
-          <span className="px-2.5 py-1 rounded-full text-[10px] font-mono tracking-wider text-amber-300/90 bg-obsidian-950/80 border border-amber-500/30 backdrop-blur-md shadow-lg">
-            🔥 DRAG TO BURN WORDS
-          </span>
-        </div>
-      )}
     </div>
   );
 };

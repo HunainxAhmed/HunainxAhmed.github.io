@@ -105,3 +105,26 @@ html.lenis, html.lenis body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Ultra-fast 60FPS Compositor-Only Atomic Assembly */
+@keyframes atomicAssemble {
+  0% {
+    opacity: 0;
+    transform: scale(0.35) translate3d(0, 8px, 0);
+    color: #00f0ff;
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.12) translate3d(0, -1px, 0);
+    color: #e0faff;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+}
+
+.animate-atomic-assemble {
+  animation: atomicAssemble 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}

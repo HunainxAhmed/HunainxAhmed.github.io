@@ -196,10 +196,10 @@ export const EldenRingBarrier: React.FC<EldenRingBarrierProps> = ({
     const dy = flamePos.y - clampedY;
     const distToBoundary = Math.sqrt(dx * dx + dy * dy);
 
-    // Active when within 250px; Touching/deflecting when flame reaches within 70px of boundary
-    const active = distToBoundary < 250;
-    const touching = distToBoundary < 70;
-    const currentIntensity = active ? Math.max(0, Math.min(1, 1 - distToBoundary / 250)) : 0;
+    // Active and sizzling ONLY when torch flame directly touches the text / force field boundary
+    const touching = distToBoundary <= 15;
+    const active = touching;
+    const currentIntensity = active ? 1.0 : 0;
 
     setIsActive(active);
     setIsTouching(touching);
@@ -220,7 +220,7 @@ export const EldenRingBarrier: React.FC<EldenRingBarrierProps> = ({
       setContactPoint(null);
       audioRef.current?.stop();
     }
-  }, [flamePos, targetRef, heroRect, isActive]);
+  }, [flamePos, targetRef, heroRect, isActive, initAudio]);
 
   return (
     <div ref={targetRef as any} className="relative inline-block select-none">
@@ -228,10 +228,10 @@ export const EldenRingBarrier: React.FC<EldenRingBarrierProps> = ({
       <AnimatePresence>
         {isActive && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.94 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.96 }}
-            transition={{ duration: 0.28, ease: 'easeOut' }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
             style={{
               left: -PAD_X,
               top: -PAD_Y,
@@ -242,25 +242,21 @@ export const EldenRingBarrier: React.FC<EldenRingBarrierProps> = ({
           >
             {/* Force Field Shimmering Outer Border with Dual Neon Glow */}
             <div
-              className={`absolute inset-0 rounded-3xl border transition-all duration-200 backdrop-blur-[2px] ${
-                isTouching
-                  ? 'border-sky-300 shadow-[0_0_60px_rgba(56,189,248,0.7),inset_0_0_35px_rgba(251,191,36,0.55)]'
-                  : 'border-sky-400/50 shadow-[0_0_40px_rgba(56,189,248,0.4),inset_0_0_25px_rgba(251,191,36,0.3)]'
-              }`}
+              className="absolute inset-0 rounded-3xl border border-sky-300 shadow-[0_0_55px_rgba(56,189,248,0.7),inset_0_0_30px_rgba(251,191,36,0.5)] transition-all duration-200 backdrop-blur-[2px]"
               style={{
                 background:
-                  'radial-gradient(ellipse at center, rgba(56, 189, 248, 0.05) 0%, rgba(251, 191, 36, 0.08) 70%, rgba(56, 189, 248, 0.22) 100%)',
+                  'radial-gradient(ellipse at center, rgba(56, 189, 248, 0.06) 0%, rgba(251, 191, 36, 0.08) 70%, rgba(56, 189, 248, 0.22) 100%)',
               }}
             />
 
             {/* Hexagonal Energy Lattice SVG Mesh */}
-            <svg className="absolute inset-0 w-full h-full rounded-3xl pointer-events-none opacity-45">
+            <svg className="absolute inset-0 w-full h-full rounded-3xl pointer-events-none opacity-50">
               <defs>
                 <pattern id="forcefieldHex" width="30" height="52" patternUnits="userSpaceOnUse">
                   <path
                     d="M15 0 L30 8.66 L30 26 L15 34.64 L0 26 L0 8.66 Z M0 43.3 L15 34.64 L30 43.3 L30 52 L0 52 Z"
                     fill="none"
-                    stroke={isTouching ? 'rgba(56, 189, 248, 0.65)' : 'rgba(56, 189, 248, 0.35)'}
+                    stroke="rgba(56, 189, 248, 0.65)"
                     strokeWidth="0.8"
                   />
                 </pattern>
@@ -275,29 +271,42 @@ export const EldenRingBarrier: React.FC<EldenRingBarrierProps> = ({
               className="absolute inset-0 w-full h-1/3 bg-gradient-to-b from-transparent via-sky-400/15 to-transparent pointer-events-none rounded-3xl"
             />
 
-            {/* Rotating Elden Rune Shield Arcs */}
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 26, ease: 'linear' }}
-              className="absolute -inset-10 sm:-inset-14 rounded-full border border-dashed border-sky-400/30 pointer-events-none"
-              style={{
-                background:
-                  'radial-gradient(circle, transparent 64%, rgba(56, 189, 248, 0.08) 70%, transparent 76%)',
-              }}
-            >
-              {/* Electric spark nodules */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-sky-300 shadow-[0_0_14px_#38bdf8]" />
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-sky-300 shadow-[0_0_14px_#38bdf8]" />
-              <div className="absolute top-1/2 left-0 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-amber-300 shadow-[0_0_14px_#fbbf24]" />
-              <div className="absolute top-1/2 right-0 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-amber-300 shadow-[0_0_14px_#fbbf24]" />
-            </motion.div>
-
-            {/* Counter-rotating Inner Rune Arc */}
-            <motion.div
-              animate={{ rotate: -360 }}
-              transition={{ repeat: Infinity, duration: 18, ease: 'linear' }}
-              className="absolute -inset-4 sm:-inset-6 rounded-full border border-dotted border-amber-400/35 pointer-events-none"
-            />
+            {/* Glowing Energy Particles Emitting Outward from the Shield Perimeter */}
+            {[
+              { x: '15%', y: '0%', dx: 0, dy: -24, color: 'bg-sky-300', glow: '#38bdf8' },
+              { x: '50%', y: '0%', dx: 0, dy: -28, color: 'bg-amber-300', glow: '#fbbf24' },
+              { x: '85%', y: '0%', dx: 0, dy: -24, color: 'bg-sky-300', glow: '#38bdf8' },
+              { x: '100%', y: '30%', dx: 26, dy: -10, color: 'bg-amber-300', glow: '#fbbf24' },
+              { x: '100%', y: '70%', dx: 26, dy: 10, color: 'bg-sky-300', glow: '#38bdf8' },
+              { x: '85%', y: '100%', dx: 0, dy: 24, color: 'bg-amber-300', glow: '#fbbf24' },
+              { x: '50%', y: '100%', dx: 0, dy: 28, color: 'bg-sky-300', glow: '#38bdf8' },
+              { x: '15%', y: '100%', dx: 0, dy: 24, color: 'bg-amber-300', glow: '#fbbf24' },
+              { x: '0%', y: '70%', dx: -26, dy: 10, color: 'bg-sky-300', glow: '#38bdf8' },
+              { x: '0%', y: '30%', dx: -26, dy: -10, color: 'bg-amber-300', glow: '#fbbf24' },
+            ].map((mote, mIdx) => (
+              <motion.div
+                key={mIdx}
+                initial={{ x: 0, y: 0, opacity: 0, scale: 0.5 }}
+                animate={{
+                  x: [0, mote.dx],
+                  y: [0, mote.dy],
+                  opacity: [0, 0.9, 0],
+                  scale: [0.5, 1.2, 0.2],
+                }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 1.8 + (mIdx % 3) * 0.4,
+                  delay: mIdx * 0.18,
+                  ease: 'easeOut',
+                }}
+                className={`absolute w-2 h-2 rounded-full ${mote.color} pointer-events-none -translate-x-1/2 -translate-y-1/2`}
+                style={{
+                  left: mote.x,
+                  top: mote.y,
+                  boxShadow: `0 0 10px ${mote.glow}`,
+                }}
+              />
+            ))}
 
             {/* Interactive Deflection Impact Flare & Electrical Sizzle when Torch touches Shield */}
             {isTouching && contactPoint && (
@@ -340,10 +349,10 @@ export const EldenRingBarrier: React.FC<EldenRingBarrierProps> = ({
               </div>
             )}
 
-            {/* Sacred Elden Ring Force Field Badge Header */}
-            <div className="absolute -top-4 px-3.5 py-0.5 rounded-full bg-obsidian-950/95 border border-sky-400/60 shadow-[0_0_15px_rgba(56,189,248,0.4)] text-[9px] font-mono tracking-widest text-sky-300 uppercase whitespace-nowrap flex items-center gap-1.5">
+            {/* Clean Force Field Badge Header */}
+            <div className="absolute -top-4 px-3 py-0.5 rounded-full bg-obsidian-950/95 border border-sky-400/60 shadow-[0_0_15px_rgba(56,189,248,0.4)] text-[9px] font-mono tracking-widest text-sky-300 uppercase whitespace-nowrap flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-ping" />
-              <span>✧ SACRED ERDTREE FORCE FIELD ✧</span>
+              <span>FORCE FIELD</span>
             </div>
           </motion.div>
         )}

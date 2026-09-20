@@ -5,6 +5,8 @@ import { profileData } from '@/data/profile';
 import { RealisticTorch } from '@/components/3d/RealisticTorch';
 import { FireCanvas, BurningRect } from '@/components/3d/FireCanvas';
 import { EldenRingBarrier } from '@/components/sections/EldenRingBarrier';
+import { SupernovaBrokenScreen } from '@/components/effects/SupernovaBrokenScreen';
+import { AtomicAssemblyCanvas } from '@/components/effects/AtomicAssemblyCanvas';
 
 // Scramble text effect on initial load for cybernetic/AI engineering feel
 const ScrambleText: React.FC<{ targetText: string; delay?: number; className?: string }> = ({
@@ -50,12 +52,14 @@ const ScrambleText: React.FC<{ targetText: string; delay?: number; className?: s
   return <span className={className}>{text || targetText}</span>;
 };
 
-// Burnable Word with Letter-by-Letter Fire Spread Mechanics
+// Burnable Word with Letter-by-Letter Fire Spread Mechanics & GPU Atomic Assembly
 interface BurnableWordProps {
   wordId: string;
   word: string;
   burnedIds: Set<string>;
   burningIds: Set<string>;
+  isAssembling?: boolean;
+  wordIndex?: number;
   className?: string;
   charClassName?: string;
 }
@@ -65,13 +69,27 @@ const BurnableWord: React.FC<BurnableWordProps> = ({
   word,
   burnedIds,
   burningIds,
+  isAssembling = false,
+  wordIndex = 0,
   className = '',
   charClassName = '',
 }) => {
   const chars = word.split('');
+  const isWordBurned = chars.some((_, charIdx) => burnedIds.has(`${wordId}-c${charIdx}`));
 
   return (
-    <span className={`inline-block whitespace-nowrap ${className}`}>
+    <span
+      className={`inline-block whitespace-nowrap ${
+        isAssembling && isWordBurned ? 'animate-atomic-assemble' : ''
+      } ${className}`}
+      style={
+        isAssembling && isWordBurned
+          ? {
+              animationDelay: `${Math.min(0.55, wordIndex * 0.028)}s`,
+            }
+          : undefined
+      }
+    >
       {chars.map((char, charIdx) => {
         const id = `${wordId}-c${charIdx}`;
         const isBurned = burnedIds.has(id);
@@ -84,20 +102,24 @@ const BurnableWord: React.FC<BurnableWordProps> = ({
             data-word-id={wordId}
             data-char-idx={charIdx}
             data-word-len={chars.length}
-            className={`inline-block transition-all duration-200 relative select-none ${
-              isBurned
+            className={`inline-block relative select-none ${
+              isAssembling && isBurned
+                ? 'opacity-100'
+                : isBurned
                 ? 'opacity-0 scale-50 pointer-events-none invisible'
                 : isBurning
                 ? 'text-amber-200 scale-110 font-bold z-20'
-                : ''
+                : 'transition-all duration-300'
             } ${charClassName}`}
-            style={{
-              textShadow: isBurning
-                ? '0 0 10px #ffea00, 0 0 22px #ff6600, 0 0 45px #ff2200'
-                : undefined,
-              filter: isBurning ? 'blur(0.3px)' : undefined,
-              color: isBurning ? '#fff6d4' : undefined,
-            }}
+            style={
+              isBurning
+                ? {
+                    textShadow: '0 0 10px #ffea00, 0 0 22px #ff6600, 0 0 45px #ff2200',
+                    filter: 'blur(0.3px)',
+                    color: '#fff6d4',
+                  }
+                : undefined
+            }
           >
             {char}
           </span>
@@ -163,8 +185,10 @@ export const Hero: React.FC = () => {
   const [burnedCount, setBurnedCount] = useState(0);
 
   // 5-Click Supernova Easter Egg State
-  const [isSupernovaShockwave, setIsSupernovaShockwave] = useState(false);
-  const [showSupernovaBanner, setShowSupernovaBanner] = useState(false);
+  const [isWorldDestroyed, setIsWorldDestroyed] = useState(false);
+
+  // Atomic Electricity Particle Assembly State
+  const [isAssembling, setIsAssembling] = useState(false);
 
   const burnedRef = useRef<Set<string>>(new Set());
   const burningRef = useRef<Set<string>>(new Set());
@@ -245,65 +269,73 @@ export const Hero: React.FC = () => {
     } catch {}
   }, []);
 
-  // Deep cinematic Supernova blast sound synthesizer
-  const playSupernovaSound = useCallback(() => {
+  // Play authentic high-voltage electric crackle & atomic ionization sound
+  const playElectricAssemblySound = useCallback(() => {
     try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      if (ctx.state === 'suspended') ctx.resume();
+      const audio = new Audio('/sounds/electric_assembly.wav');
+      audio.volume = 1.0;
+      audio.play().catch(() => {
+        try {
+          const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+          if (!AudioCtx) return;
+          const ctx = new AudioCtx();
+          if (ctx.state === 'suspended') ctx.resume();
 
-      const now = ctx.currentTime;
+          const now = ctx.currentTime;
+          const duration = 1.4;
 
-      // Sub-bass frequency dive
-      const subOsc = ctx.createOscillator();
-      const subGain = ctx.createGain();
-      subOsc.type = 'sawtooth';
-      subOsc.frequency.setValueAtTime(160, now);
-      subOsc.frequency.exponentialRampToValueAtTime(24, now + 1.2);
+          const osc = ctx.createOscillator();
+          const humGain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(110, now);
+          osc.frequency.exponentialRampToValueAtTime(55, now + duration);
 
-      const subFilter = ctx.createBiquadFilter();
-      subFilter.type = 'lowpass';
-      subFilter.frequency.setValueAtTime(250, now);
-      subFilter.frequency.exponentialRampToValueAtTime(60, now + 1.2);
+          const filter = ctx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(400, now);
 
-      subGain.gain.setValueAtTime(0.35, now);
-      subGain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+          humGain.gain.setValueAtTime(0.12, now);
+          humGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
-      subOsc.connect(subFilter);
-      subFilter.connect(subGain);
-      subGain.connect(ctx.destination);
-      subOsc.start(now);
-      subOsc.stop(now + 1.4);
+          osc.connect(filter);
+          filter.connect(humGain);
+          humGain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + duration);
 
-      // Roaring shockwave noise burst
-      const bufferSize = ctx.sampleRate * 1.5;
-      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.35));
-      }
+          const bufferSize = Math.floor(ctx.sampleRate * duration);
+          const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+          const data = noiseBuffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            if (Math.random() < 0.09) {
+              data[i] = (Math.random() * 2 - 1) * Math.random();
+            } else {
+              data[i] = (Math.random() * 2 - 1) * 0.015;
+            }
+          }
+          const noise = ctx.createBufferSource();
+          noise.buffer = noiseBuffer;
 
-      const noiseSource = ctx.createBufferSource();
-      noiseSource.buffer = buffer;
+          const sparkFilter = ctx.createBiquadFilter();
+          sparkFilter.type = 'bandpass';
+          sparkFilter.frequency.setValueAtTime(2800, now);
+          sparkFilter.frequency.exponentialRampToValueAtTime(1200, now + duration);
+          sparkFilter.Q.setValueAtTime(3.5, now);
 
-      const noiseFilter = ctx.createBiquadFilter();
-      noiseFilter.type = 'bandpass';
-      noiseFilter.frequency.setValueAtTime(1400, now);
-      noiseFilter.frequency.exponentialRampToValueAtTime(150, now + 1.2);
-      noiseFilter.Q.setValueAtTime(1.8, now);
+          const sparkGain = ctx.createGain();
+          sparkGain.gain.setValueAtTime(0.18, now);
+          sparkGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
-      const noiseGain = ctx.createGain();
-      noiseGain.gain.setValueAtTime(0.25, now);
-      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
-
-      noiseSource.connect(noiseFilter);
-      noiseFilter.connect(noiseGain);
-      noiseGain.connect(ctx.destination);
-      noiseSource.start(now);
-      noiseSource.stop(now + 1.5);
+          noise.connect(sparkFilter);
+          sparkFilter.connect(sparkGain);
+          sparkGain.connect(ctx.destination);
+          noise.start(now);
+          noise.stop(now + duration);
+        } catch {}
+      });
     } catch {}
   }, []);
+
 
   // Ignite character and cascade fire spread across the word
   const igniteCharacter = useCallback(
@@ -376,93 +408,80 @@ export const Hero: React.FC = () => {
     [playSizzleSound]
   );
 
-  // Real-time Collision Detection between Torch Flame Tip and Letter Spans
+  const flameTipPosRef = useRef<{ x: number; y: number } | null>(null);
+  const flameCheckRaf = useRef<number | null>(null);
+
+  // Real-time Collision Detection between Torch Flame Tip and Letter Spans (Throttled to 60 FPS)
   const handleFlameMove = useCallback(
     (flameX: number, flameY: number) => {
+      flameTipPosRef.current = { x: flameX, y: flameY };
       setFlameTipPos({ x: flameX, y: flameY });
 
-      if (!heroRef.current) return;
-      const heroRect = heroRef.current.getBoundingClientRect();
+      if (flameCheckRaf.current !== null) return;
 
-      const targets = heroRef.current.querySelectorAll<HTMLElement>('[data-burn-id]');
-      targets.forEach((el) => {
-        const id = el.getAttribute('data-burn-id');
-        if (!id || id.startsWith('title-')) return;
-        if (burnedRef.current.has(id) || burningRef.current.has(id)) return;
+      flameCheckRaf.current = requestAnimationFrame(() => {
+        flameCheckRaf.current = null;
+        if (!heroRef.current) return;
 
-        const rect = el.getBoundingClientRect();
-        const relLeft = rect.left - heroRect.left;
-        const relRight = rect.right - heroRect.left;
-        const relTop = rect.top - heroRect.top;
-        const relBottom = rect.bottom - heroRect.top;
+        const curPos = flameTipPosRef.current;
+        if (!curPos) return;
 
-        // Burning radius around flame tip
-        const padding = 16;
-        if (
-          flameX >= relLeft - padding &&
-          flameX <= relRight + padding &&
-          flameY >= relTop - padding &&
-          flameY <= relBottom + padding
-        ) {
-          igniteCharacter(el, id, heroRect);
+        const heroRect = heroRef.current.getBoundingClientRect();
+        const targets = heroRef.current.querySelectorAll<HTMLElement>('[data-burn-id]');
+
+        for (let i = 0; i < targets.length; i++) {
+          const el = targets[i];
+          const id = el.getAttribute('data-burn-id');
+          if (!id || id.startsWith('title-')) continue;
+          if (burnedRef.current.has(id) || burningRef.current.has(id)) continue;
+
+          const rect = el.getBoundingClientRect();
+          const relLeft = rect.left - heroRect.left;
+          const relRight = rect.right - heroRect.left;
+          const relTop = rect.top - heroRect.top;
+          const relBottom = rect.bottom - heroRect.top;
+
+          const padding = 16;
+          if (
+            curPos.x >= relLeft - padding &&
+            curPos.x <= relRight + padding &&
+            curPos.y >= relTop - padding &&
+            curPos.y <= relBottom + padding
+          ) {
+            igniteCharacter(el, id, heroRect);
+            break;
+          }
         }
       });
     },
     [igniteCharacter]
   );
 
-  // 5-Click Supernova Blast Easter Egg Handler
+  // 5-Click Supernova Easter Egg Handler -> Triggers Meteor Shower Attack
   const handleSupernova = useCallback(() => {
-    playSupernovaSound();
-    setIsSupernovaShockwave(true);
-    setTimeout(() => setIsSupernovaShockwave(false), 900);
+    // Immediately open the Supernova Broken Screen (starting with the Meteor Shower Attack)
+    setIsWorldDestroyed(true);
+    // Text remains fully visible on the website while the meteors rain down!
+  }, []);
 
-    // Show FromSoftware style banner
-    setShowSupernovaBanner(true);
-    setTimeout(() => setShowSupernovaBanner(false), 5200);
-
-    if (!heroRef.current) return;
-    const heroRect = heroRef.current.getBoundingClientRect();
-    const targets = heroRef.current.querySelectorAll<HTMLElement>('[data-burn-id]');
-
-    const newBurningRects: BurningRect[] = [];
-    targets.forEach((el) => {
-      const id = el.getAttribute('data-burn-id');
-      if (!id || id.startsWith('title-')) return;
-
-      burningRef.current.add(id);
-      const rect = el.getBoundingClientRect();
-      newBurningRects.push({
-        id,
-        x: rect.left - heroRect.left,
-        y: rect.top - heroRect.top,
-        width: Math.max(10, rect.width),
-        height: Math.max(16, rect.height),
-        char: el.textContent || '',
-        progress: 0,
-      });
-    });
-
-    setBurningIds(new Set(burningRef.current));
-    setBurningRects(newBurningRects);
-
-    // Turn all ignited text into ash after 800ms
-    setTimeout(() => {
+  // Callback when Meteor Shower concludes and transitions into the dedicated broken screen
+  const handleWorldDestroyed = useCallback(() => {
+    if (heroRef.current) {
+      const targets = heroRef.current.querySelectorAll<HTMLElement>('[data-burn-id]');
       targets.forEach((el) => {
         const id = el.getAttribute('data-burn-id');
         if (id && !id.startsWith('title-')) {
-          burningRef.current.delete(id);
           burnedRef.current.add(id);
         }
       });
-      setBurningIds(new Set(burningRef.current));
       setBurnedIds(new Set(burnedRef.current));
       setBurnedCount(burnedRef.current.size);
+      setBurningIds(new Set());
       setBurningRects([]);
-    }, 800);
-  }, [playSupernovaSound]);
+    }
+  }, []);
 
-  // Restore all burned text and blocks
+  // Restore all burned text and blocks (Manual Rekindle Button)
   const handleRekindle = () => {
     playRekindleSound();
     burnedRef.current.clear();
@@ -471,8 +490,26 @@ export const Hero: React.FC = () => {
     setBurningIds(new Set());
     setBurnedCount(0);
     setBurningRects([]);
-    setShowSupernovaBanner(false);
+    setIsWorldDestroyed(false);
   };
+
+  // Godzilla Atomic Rebirth: Text Assembles from Small Electricity Particles with Electric Sound
+  const handleSupernovaReset = useCallback(() => {
+    setIsWorldDestroyed(false);
+    playElectricAssemblySound();
+    setIsAssembling(true);
+  }, [playElectricAssemblySound]);
+
+  const handleAssemblyComplete = useCallback(() => {
+    // Release burned state so characters permanently remain visible
+    burnedRef.current.clear();
+    burningRef.current.clear();
+    setBurnedIds(new Set());
+    setBurningIds(new Set());
+    setBurnedCount(0);
+    setBurningRects([]);
+    setIsAssembling(false);
+  }, []);
 
   // Dynamic cycling specializations
   const specializations = [
@@ -511,57 +548,24 @@ export const Hero: React.FC = () => {
         containerHeight={heroSize.height}
       />
 
-      {/* GPU-Accelerated Supernova Shockwave Ring & Ambient Blast */}
+      {/* Supernova Charcoal Burnt Broken Screen & Godzilla Beam Rebirth Sequence */}
       <AnimatePresence>
-        {isSupernovaShockwave && (
-          <motion.div
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.9, ease: 'easeOut' }}
-            className="absolute inset-0 pointer-events-none z-50 flex items-center justify-center overflow-hidden"
-          >
-            <div className="absolute inset-0 bg-radial from-amber-400/40 via-orange-500/20 to-transparent" />
-            <motion.div
-              initial={{ scale: 0.1, opacity: 1 }}
-              animate={{ scale: 5.5, opacity: 0 }}
-              transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
-              className="w-96 h-96 rounded-full border-4 border-amber-300 shadow-[0_0_120px_#f59e0b,inset_0_0_80px_#ea580c]"
-            />
-          </motion.div>
+        {isWorldDestroyed && (
+          <SupernovaBrokenScreen
+            onResetComplete={handleSupernovaReset}
+            onDestroyed={handleWorldDestroyed}
+          />
         )}
       </AnimatePresence>
 
-      {/* FromSoftware / Elden Ring "YOU SHOULD PAY FOR THAT DESTRUCTION" Banner */}
-      <AnimatePresence>
-        {showSupernovaBanner && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.03 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            onClick={() => setShowSupernovaBanner(false)}
-            className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-auto cursor-pointer"
-          >
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
-            <div className="relative z-10 w-full max-w-4xl py-12 px-6 sm:px-12 flex flex-col items-center text-center bg-gradient-to-b from-transparent via-obsidian-950/95 to-transparent border-y border-amber-500/30">
-              <div className="flex items-center gap-3 mb-4 text-amber-400/80 text-xs font-serif tracking-[0.35em] uppercase">
-                <span className="w-8 sm:w-16 h-[1px] bg-amber-400/40" />
-                <span>SACRED RESTRICTION VIOLATED</span>
-                <span className="w-8 sm:w-16 h-[1px] bg-amber-400/40" />
-              </div>
-
-              <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-serif tracking-[0.22em] text-transparent bg-clip-text bg-gradient-to-b from-amber-100 via-amber-300 to-amber-600 drop-shadow-[0_0_25px_rgba(245,158,11,0.55)] font-normal uppercase select-none mb-4">
-                YOU SHOULD PAY FOR THAT DESTRUCTION
-              </h2>
-
-              <p className="font-mono text-[11px] sm:text-xs text-titanium-400 tracking-widest uppercase">
-                [ Click anywhere or press Rekindle to restore ]
-              </p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* 60FPS Atomic Electricity Particle Assembly Canvas */}
+      {isAssembling && (
+        <AtomicAssemblyCanvas
+          containerWidth={heroSize.width}
+          containerHeight={heroSize.height}
+          onComplete={handleAssemblyComplete}
+        />
+      )}
 
       {/* Film grain overlay */}
       <div className="absolute inset-0 pointer-events-none bg-grain opacity-60 mix-blend-overlay" />
@@ -592,27 +596,7 @@ export const Hero: React.FC = () => {
           >
             <span className="w-4 sm:w-8 h-[1px] bg-titanium-400/40 shrink-0" />
             <span className="font-mono text-[10.5px] sm:text-xs md:text-sm tracking-wider sm:tracking-widest text-titanium-400 uppercase font-medium whitespace-nowrap">
-              <BurnableWord
-                wordId="eyebrow-0"
-                word="AI"
-                burnedIds={burnedIds}
-                burningIds={burningIds}
-              />
-              <span className="mx-1.5">/</span>
-              <BurnableWord
-                wordId="eyebrow-1"
-                word="MACHINE"
-                burnedIds={burnedIds}
-                burningIds={burningIds}
-              />
-              <span className="mx-1.5">LEARNING</span>
-              <span className="mx-1.5">/</span>
-              <BurnableWord
-                wordId="eyebrow-2"
-                word="FULL-STACK"
-                burnedIds={burnedIds}
-                burningIds={burningIds}
-              />
+              <ScrambleText targetText="AI / MACHINE LEARNING / FULL-STACK" delay={200} />
             </span>
           </motion.div>
 
@@ -640,6 +624,8 @@ export const Hero: React.FC = () => {
                   word={word}
                   burnedIds={burnedIds}
                   burningIds={burningIds}
+                  isAssembling={isAssembling}
+                  wordIndex={wIdx}
                   className="inline-block"
                 />
               ))}
@@ -676,6 +662,8 @@ export const Hero: React.FC = () => {
                 word={word}
                 burnedIds={burnedIds}
                 burningIds={burningIds}
+                isAssembling={isAssembling}
+                wordIndex={wIdx + 8}
                 className="inline-block"
               />
             ))}
@@ -698,6 +686,8 @@ export const Hero: React.FC = () => {
                 word="EXPLORE COLLABORATION"
                 burnedIds={burnedIds}
                 burningIds={burningIds}
+                isAssembling={isAssembling}
+                wordIndex={16}
               />
               <ArrowUpRight className="w-3.5 h-3.5" />
             </a>
@@ -717,6 +707,8 @@ export const Hero: React.FC = () => {
                 word="DOWNLOAD RESUME / CV"
                 burnedIds={burnedIds}
                 burningIds={burningIds}
+                isAssembling={isAssembling}
+                wordIndex={20}
               />
             </a>
           </motion.div>
@@ -748,6 +740,8 @@ export const Hero: React.FC = () => {
                     word={tech}
                     burnedIds={burnedIds}
                     burningIds={burningIds}
+                    isAssembling={isAssembling}
+                    wordIndex={24 + tIdx}
                   />
                 </span>
               );
