@@ -493,12 +493,29 @@ export const Hero: React.FC = () => {
     setIsWorldDestroyed(false);
   };
 
+  // Seismic tremor & rotational camera shake for Godzilla Beam and Titan Meteor impact
+  const [viewportShake, setViewportShake] = useState<{ x: number; y: number; rotate: number }>({
+    x: 0,
+    y: 0,
+    rotate: 0,
+  });
+
+  const handleViewportShake = useCallback(
+    (shake: { x: number; y: number; rotate: number }) => {
+      setViewportShake(shake);
+    },
+    []
+  );
+
   // Godzilla Atomic Rebirth: Text Assembles from Small Electricity Particles with Electric Sound
-  const handleSupernovaReset = useCallback(() => {
-    setIsWorldDestroyed(false);
+  const handleStartAssembly = useCallback(() => {
     playElectricAssemblySound();
     setIsAssembling(true);
   }, [playElectricAssemblySound]);
+
+  const handleSupernovaReset = useCallback(() => {
+    setIsWorldDestroyed(false);
+  }, []);
 
   const handleAssemblyComplete = useCallback(() => {
     // Release burned state so characters permanently remain visible
@@ -539,6 +556,14 @@ export const Hero: React.FC = () => {
       id="hero"
       ref={heroRef}
       onPointerMove={handleMouseMove}
+      style={{
+        transform:
+          viewportShake.x !== 0 || viewportShake.y !== 0 || viewportShake.rotate !== 0
+            ? `translate3d(${viewportShake.x}px, ${viewportShake.y}px, 0) rotate(${viewportShake.rotate}deg)`
+            : undefined,
+        transformOrigin: 'center center',
+        transition: 'transform 0.04s ease-out',
+      }}
       className="relative min-h-screen w-full flex flex-col justify-between pt-32 pb-12 px-6 sm:px-8 overflow-hidden bg-obsidian-950"
     >
       {/* 2D Fire & Billowing Smoke Particle Simulation Canvas */}
@@ -554,6 +579,8 @@ export const Hero: React.FC = () => {
           <SupernovaBrokenScreen
             onResetComplete={handleSupernovaReset}
             onDestroyed={handleWorldDestroyed}
+            onStartAssembly={handleStartAssembly}
+            onShake={handleViewportShake}
           />
         )}
       </AnimatePresence>

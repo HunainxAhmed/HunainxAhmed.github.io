@@ -6,6 +6,8 @@ import { DoctorStrangeNucleusSpell } from './DoctorStrangeNucleusSpell';
 interface SupernovaBrokenScreenProps {
   onResetComplete: () => void;
   onDestroyed?: () => void;
+  onStartAssembly?: () => void;
+  onShake?: (shake: { x: number; y: number; rotate: number }) => void;
 }
 
 type RebuildPhase = 'meteor_attack' | 'destroyed' | 'charging' | 'striking' | 'done';
@@ -13,6 +15,8 @@ type RebuildPhase = 'meteor_attack' | 'destroyed' | 'charging' | 'striking' | 'd
 export const SupernovaBrokenScreen: React.FC<SupernovaBrokenScreenProps> = ({
   onResetComplete,
   onDestroyed,
+  onStartAssembly,
+  onShake,
 }) => {
   const [phase, setPhase] = useState<RebuildPhase>('meteor_attack');
   const [shake, setShake] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -190,13 +194,17 @@ export const SupernovaBrokenScreen: React.FC<SupernovaBrokenScreenProps> = ({
           });
 
           if (m.isMega) {
-            setShake({ x: 26, y: -22 });
+            const triggerShake = (x: number, y: number, r: number) => {
+              setShake({ x, y });
+              onShake?.({ x, y, rotate: r });
+            };
+            triggerShake(26, -22, 1.1);
             setIsBlindingFlash(true);
-            setTimeout(() => setShake({ x: -22, y: 18 }), 55);
-            setTimeout(() => setShake({ x: 18, y: -15 }), 110);
-            setTimeout(() => setShake({ x: -12, y: 10 }), 170);
-            setTimeout(() => setShake({ x: 6, y: -6 }), 230);
-            setTimeout(() => setShake({ x: 0, y: 0 }), 320);
+            setTimeout(() => triggerShake(-22, 18, -0.9), 55);
+            setTimeout(() => triggerShake(18, -15, 0.7), 110);
+            setTimeout(() => triggerShake(-12, 10, -0.5), 170);
+            setTimeout(() => triggerShake(6, -6, 0.2), 230);
+            setTimeout(() => triggerShake(0, 0, 0), 320);
             setTimeout(() => setIsBlindingFlash(false), 380);
           } else {
             setShake({
@@ -333,7 +341,7 @@ export const SupernovaBrokenScreen: React.FC<SupernovaBrokenScreenProps> = ({
   }, [phase]);
 
   // =========================================================================
-  // PHASE 3: LIVING, RAGING GODZILLA ATOMIC ENERGY BEAM SIMULATION (CANVAS 60FPS)
+  // PHASE 3: LIVING, RAGING GODZILLA ATOMIC ENERGY BEAM & GASEOUS FUMES
   // =========================================================================
   useEffect(() => {
     if (phase !== 'striking') return;
@@ -347,6 +355,55 @@ export const SupernovaBrokenScreen: React.FC<SupernovaBrokenScreenProps> = ({
     const width = (canvas.width = window.innerWidth);
     const height = (canvas.height = window.innerHeight);
     const centerX = width * 0.5;
+
+    // Pre-rendered 128x128 soft volumetric smoke puff sprites for 60fps GPU blitting
+    const puffCyan = document.createElement('canvas');
+    puffCyan.width = 128;
+    puffCyan.height = 128;
+    const cCtx = puffCyan.getContext('2d');
+    if (cCtx) {
+      const g = cCtx.createRadialGradient(64, 64, 0, 64, 64, 64);
+      g.addColorStop(0, 'rgba(180, 255, 255, 0.7)');
+      g.addColorStop(0.25, 'rgba(0, 240, 255, 0.45)');
+      g.addColorStop(0.65, 'rgba(2, 132, 199, 0.15)');
+      g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      cCtx.fillStyle = g;
+      cCtx.beginPath();
+      cCtx.arc(64, 64, 64, 0, Math.PI * 2);
+      cCtx.fill();
+    }
+
+    const puffWhite = document.createElement('canvas');
+    puffWhite.width = 128;
+    puffWhite.height = 128;
+    const wCtx = puffWhite.getContext('2d');
+    if (wCtx) {
+      const g = wCtx.createRadialGradient(64, 64, 0, 64, 64, 64);
+      g.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+      g.addColorStop(0.3, 'rgba(224, 242, 254, 0.5)');
+      g.addColorStop(0.7, 'rgba(56, 189, 248, 0.12)');
+      g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      wCtx.fillStyle = g;
+      wCtx.beginPath();
+      wCtx.arc(64, 64, 64, 0, Math.PI * 2);
+      wCtx.fill();
+    }
+
+    const puffSmoke = document.createElement('canvas');
+    puffSmoke.width = 128;
+    puffSmoke.height = 128;
+    const sCtx = puffSmoke.getContext('2d');
+    if (sCtx) {
+      const g = sCtx.createRadialGradient(64, 64, 0, 64, 64, 64);
+      g.addColorStop(0, 'rgba(15, 23, 42, 0.65)');
+      g.addColorStop(0.45, 'rgba(30, 58, 138, 0.25)');
+      g.addColorStop(0.8, 'rgba(14, 165, 233, 0.06)');
+      g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      sCtx.fillStyle = g;
+      sCtx.beginPath();
+      sCtx.arc(64, 64, 64, 0, Math.PI * 2);
+      sCtx.fill();
+    }
 
     // Sparks particle pool
     interface Spark {
@@ -370,6 +427,35 @@ export const SupernovaBrokenScreen: React.FC<SupernovaBrokenScreenProps> = ({
     }
     const shockRings: ShockRing[] = [];
 
+    // Ground shockwave rings expanding across the floor
+    interface GroundShock {
+      radiusX: number;
+      radiusY: number;
+      alpha: number;
+      decay: number;
+      lineWidth: number;
+      speed: number;
+    }
+    const groundShocks: GroundShock[] = [];
+
+    // Volumetric Gaseous Fumes & Rolling Radioactive Vapor Cloud
+    interface FumeParticle {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      size: number;
+      maxSize: number;
+      growthRate: number;
+      rotation: number;
+      angularVelocity: number;
+      alpha: number;
+      maxAlpha: number;
+      decay: number;
+      type: 'cyan' | 'white' | 'smoke';
+    }
+    const fumes: FumeParticle[] = [];
+
     // Branching electric lightning arcs
     interface LightningArc {
       segments: { x: number; y: number }[];
@@ -385,137 +471,262 @@ export const SupernovaBrokenScreen: React.FC<SupernovaBrokenScreenProps> = ({
       frame++;
 
       const elapsed = performance.now() - strikeStartTime;
-      const fade = elapsed > 3000 ? Math.max(0, 1 - (elapsed - 3000) / 450) : 1.0;
+      const beamFade = elapsed < 2800 ? 1.0 : Math.max(0, 1 - (elapsed - 2800) / 400);
 
       ctx.clearRect(0, 0, width, height);
 
       // Oscillating beam widths (breathing, raging atomic core) with smooth dissipation into sparks
-      const coreWidth = (44 + Math.sin(frame * 0.35) * 10 + (Math.random() - 0.5) * 8) * fade;
-      const plasmaWidth = (145 + Math.sin(frame * 0.18) * 24 + (Math.random() - 0.5) * 14) * fade;
-      const coronaWidth = (320 + Math.sin(frame * 0.08) * 45 + (Math.random() - 0.5) * 20) * fade;
+      const coreWidth = (44 + Math.sin(frame * 0.35) * 10 + (Math.random() - 0.5) * 8) * beamFade;
+      const plasmaWidth = (145 + Math.sin(frame * 0.18) * 24 + (Math.random() - 0.5) * 14) * beamFade;
+      const coronaWidth = (320 + Math.sin(frame * 0.08) * 45 + (Math.random() - 0.5) * 20) * beamFade;
+      const impactY = height;
 
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
+      // =========================================================================
+      // 1. GASEOUS FUMES & ROLLING RADIOACTIVE VAPOR SIMULATION
+      // =========================================================================
+      // While beam is firing (< 3200ms), blast dense clouds of fumes outward from ground impact
+      if (elapsed < 3200 && fumes.length < 150) {
+        const numNewFumes = frame % 2 === 0 ? 3 : 2;
+        for (let n = 0; n < numNewFumes; n++) {
+          const isGroundRoller = Math.random() > 0.35;
+          const dir = Math.random() > 0.5 ? 1 : -1;
+          const typeRoll = Math.random();
+          const type: 'cyan' | 'white' | 'smoke' =
+            typeRoll < 0.35 ? 'white' : typeRoll < 0.75 ? 'cyan' : 'smoke';
 
-      // 1. Outer Ethereal Atomic Aura (wide cyan-blue dispersion)
-      const auraGrad = ctx.createLinearGradient(centerX - coronaWidth, 0, centerX + coronaWidth, 0);
-      auraGrad.addColorStop(0, 'rgba(0, 80, 255, 0)');
-      auraGrad.addColorStop(0.3, 'rgba(0, 150, 255, 0.25)');
-      auraGrad.addColorStop(0.5, 'rgba(0, 220, 255, 0.45)');
-      auraGrad.addColorStop(0.7, 'rgba(0, 150, 255, 0.25)');
-      auraGrad.addColorStop(1, 'rgba(0, 80, 255, 0)');
-      ctx.fillStyle = auraGrad;
-      ctx.fillRect(centerX - coronaWidth, 0, coronaWidth * 2, height);
-
-      // 2. Superheated Plasma Column
-      const plasmaGrad = ctx.createLinearGradient(centerX - plasmaWidth, 0, centerX + plasmaWidth, 0);
-      plasmaGrad.addColorStop(0, 'rgba(0, 100, 255, 0)');
-      plasmaGrad.addColorStop(0.35, 'rgba(0, 230, 255, 0.75)');
-      plasmaGrad.addColorStop(0.5, 'rgba(200, 255, 255, 0.95)');
-      plasmaGrad.addColorStop(0.65, 'rgba(0, 230, 255, 0.75)');
-      plasmaGrad.addColorStop(1, 'rgba(0, 100, 255, 0)');
-      ctx.fillStyle = plasmaGrad;
-      ctx.fillRect(centerX - plasmaWidth, 0, plasmaWidth * 2, height);
-
-      // 3. Blinding White-Hot Nuclear Core Column
-      const coreGrad = ctx.createLinearGradient(centerX - coreWidth, 0, centerX + coreWidth, 0);
-      coreGrad.addColorStop(0, 'rgba(0, 240, 255, 0.15)');
-      coreGrad.addColorStop(0.3, 'rgba(255, 255, 255, 0.92)');
-      coreGrad.addColorStop(0.5, 'rgba(255, 255, 255, 1)');
-      coreGrad.addColorStop(0.7, 'rgba(255, 255, 255, 0.92)');
-      coreGrad.addColorStop(1, 'rgba(0, 240, 255, 0.15)');
-      ctx.fillStyle = coreGrad;
-      ctx.fillRect(centerX - coreWidth, 0, coreWidth * 2, height);
-
-      // 4. Internal Wavy Sinusoidal Energy Filaments (6 twisting plasma ribbons)
-      for (let r = 0; r < 6; r++) {
-        ctx.beginPath();
-        ctx.strokeStyle = r % 2 === 0 ? 'rgba(255, 255, 255, 0.88)' : 'rgba(56, 220, 255, 0.78)';
-        ctx.lineWidth = 3 + (r % 3) * 2;
-        for (let y = 0; y <= height; y += 16) {
-          const xOff = Math.sin(y * 0.015 + frame * 0.22 + r * 1.2) * (18 + r * 5);
-          if (y === 0) ctx.moveTo(centerX + xOff, y);
-          else ctx.lineTo(centerX + xOff, y);
+          fumes.push({
+            x: centerX + (Math.random() - 0.5) * (coreWidth * 1.6),
+            y: impactY - Math.random() * 18,
+            vx: isGroundRoller
+              ? dir * (Math.random() * 22 + 9)
+              : (Math.random() - 0.5) * 14,
+            vy: isGroundRoller
+              ? -(Math.random() * 3.5 + 1.2)
+              : -(Math.random() * 7 + 3),
+            size: Math.random() * 22 + 20,
+            maxSize: Math.random() * 110 + 130,
+            growthRate: Math.random() * 0.95 + 0.65,
+            rotation: Math.random() * Math.PI * 2,
+            angularVelocity: (Math.random() - 0.5) * 0.04,
+            alpha: 1.0,
+            maxAlpha: isGroundRoller ? 0.75 : 0.6,
+            decay: Math.random() * 0.009 + 0.006,
+            type,
+          });
         }
-        ctx.stroke();
-      }
-
-      // 5. Supersonic Compression Shockwave Rings Travelling Down the Beam
-      if (frame % 4 === 0 && shockRings.length < 16) {
-        shockRings.push({
-          y: -20,
-          speed: Math.random() * 8 + 26,
-          width: coreWidth * (1.8 + Math.random() * 0.6),
+      } else if (elapsed < 4000 && frame % 2 === 0 && fumes.length < 160) {
+        // Residual ground heat simmering after beam cuts off
+        fumes.push({
+          x: centerX + (Math.random() - 0.5) * (width * 0.35),
+          y: impactY - Math.random() * 12,
+          vx: (Math.random() - 0.5) * 5,
+          vy: -(Math.random() * 4.2 + 1.5),
+          size: Math.random() * 24 + 20,
+          maxSize: Math.random() * 120 + 140,
+          growthRate: 0.75,
+          rotation: Math.random() * Math.PI * 2,
+          angularVelocity: (Math.random() - 0.5) * 0.02,
           alpha: 1.0,
+          maxAlpha: 0.45,
+          decay: 0.008,
+          type: Math.random() > 0.4 ? 'cyan' : 'smoke',
         });
       }
-      for (let i = shockRings.length - 1; i >= 0; i--) {
-        const sr = shockRings[i];
-        sr.y += sr.speed;
-        sr.alpha -= 0.018;
-        if (sr.y > height || sr.alpha <= 0) {
-          shockRings.splice(i, 1);
+
+      // Ground shockwave rings spawning on impact
+      if (elapsed < 2800 && frame % 12 === 0 && groundShocks.length < 6) {
+        groundShocks.push({
+          radiusX: 30,
+          radiusY: 8,
+          alpha: 1.0,
+          decay: 0.022,
+          lineWidth: 5,
+          speed: Math.random() * 14 + 18,
+        });
+      }
+
+      // Render Ground Shockwaves
+      ctx.save();
+      for (let g = groundShocks.length - 1; g >= 0; g--) {
+        const gs = groundShocks[g];
+        gs.radiusX += gs.speed;
+        gs.radiusY += gs.speed * 0.28;
+        gs.alpha -= gs.decay;
+        if (gs.alpha <= 0) {
+          groundShocks.splice(g, 1);
           continue;
         }
         ctx.beginPath();
-        ctx.ellipse(centerX, sr.y, sr.width, 10, 0, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(180, 250, 255, ${sr.alpha * 0.85})`;
-        ctx.lineWidth = 3.5;
+        ctx.ellipse(centerX, impactY, gs.radiusX, gs.radiusY, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(0, 240, 255, ${gs.alpha * 0.75 * beamFade})`;
+        ctx.lineWidth = gs.lineWidth * gs.alpha;
         ctx.stroke();
       }
+      ctx.restore();
 
-      // 6. Branching Lightning Tendrils (Snaking violently along the beam)
-      if (frame % 2 === 0) {
-        lightningArcs = [];
-        const numArcs = Math.floor(Math.random() * 4) + 3;
-        for (let a = 0; a < numArcs; a++) {
-          const startY = Math.random() * height;
-          const isLeft = Math.random() > 0.5;
-          const startX = centerX + (isLeft ? -coreWidth : coreWidth);
-          const segments: { x: number; y: number }[] = [{ x: startX, y: startY }];
-          let curX = startX;
-          let curY = startY;
-          const steps = Math.floor(Math.random() * 5) + 4;
-          for (let s = 0; s < steps; s++) {
-            curX += (isLeft ? -1 : 1) * (Math.random() * 38 + 16);
-            curY += (Math.random() - 0.5) * 45;
-            segments.push({ x: curX, y: curY });
+      // Render Volumetric Gaseous Fumes (Dense atmospheric smoke + glowing ionized vapor)
+      ctx.save();
+      for (let i = fumes.length - 1; i >= 0; i--) {
+        const f = fumes[i];
+        f.x += f.vx;
+        f.y += f.vy;
+        f.vx *= 0.955; // Drag slows down outward rush
+        f.vy -= 0.045; // Hot atomic gas thermal buoyancy lifts it into the sky
+        f.vy *= 0.985;
+        f.vx += Math.sin(frame * 0.035 + f.y * 0.015) * 0.35; // Turbulent curl
+        if (f.size < f.maxSize) {
+          f.size += f.growthRate;
+        }
+        f.rotation += f.angularVelocity;
+        f.alpha -= f.decay;
+
+        if (f.alpha <= 0 || f.y < -120) {
+          fumes.splice(i, 1);
+          continue;
+        }
+
+        const sprite = f.type === 'white' ? puffWhite : f.type === 'cyan' ? puffCyan : puffSmoke;
+        ctx.save();
+        ctx.translate(f.x, f.y);
+        ctx.rotate(f.rotation);
+        ctx.globalAlpha = Math.max(0, Math.min(1, f.alpha * f.maxAlpha));
+        ctx.globalCompositeOperation = f.type === 'smoke' ? 'source-over' : 'screen';
+        ctx.drawImage(sprite, -f.size, -f.size, f.size * 2, f.size * 2);
+        ctx.restore();
+      }
+      ctx.restore();
+
+      // =========================================================================
+      // 2. ACTIVE ATOMIC BEAM RENDERING (Only while beamFade > 0)
+      // =========================================================================
+      if (beamFade > 0.001) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+
+        // 1. Outer Ethereal Atomic Aura (wide cyan-blue dispersion)
+        const auraGrad = ctx.createLinearGradient(centerX - coronaWidth, 0, centerX + coronaWidth, 0);
+        auraGrad.addColorStop(0, 'rgba(0, 80, 255, 0)');
+        auraGrad.addColorStop(0.3, `rgba(0, 150, 255, ${0.25 * beamFade})`);
+        auraGrad.addColorStop(0.5, `rgba(0, 220, 255, ${0.45 * beamFade})`);
+        auraGrad.addColorStop(0.7, `rgba(0, 150, 255, ${0.25 * beamFade})`);
+        auraGrad.addColorStop(1, 'rgba(0, 80, 255, 0)');
+        ctx.fillStyle = auraGrad;
+        ctx.fillRect(centerX - coronaWidth, 0, coronaWidth * 2, height);
+
+        // 2. Superheated Plasma Column
+        const plasmaGrad = ctx.createLinearGradient(centerX - plasmaWidth, 0, centerX + plasmaWidth, 0);
+        plasmaGrad.addColorStop(0, 'rgba(0, 100, 255, 0)');
+        plasmaGrad.addColorStop(0.35, `rgba(0, 230, 255, ${0.75 * beamFade})`);
+        plasmaGrad.addColorStop(0.5, `rgba(200, 255, 255, ${0.95 * beamFade})`);
+        plasmaGrad.addColorStop(0.65, `rgba(0, 230, 255, ${0.75 * beamFade})`);
+        plasmaGrad.addColorStop(1, 'rgba(0, 100, 255, 0)');
+        ctx.fillStyle = plasmaGrad;
+        ctx.fillRect(centerX - plasmaWidth, 0, plasmaWidth * 2, height);
+
+        // 3. Blinding White-Hot Nuclear Core Column
+        const coreGrad = ctx.createLinearGradient(centerX - coreWidth, 0, centerX + coreWidth, 0);
+        coreGrad.addColorStop(0, `rgba(0, 240, 255, ${0.15 * beamFade})`);
+        coreGrad.addColorStop(0.3, `rgba(255, 255, 255, ${0.92 * beamFade})`);
+        coreGrad.addColorStop(0.5, `rgba(255, 255, 255, ${1.0 * beamFade})`);
+        coreGrad.addColorStop(0.7, `rgba(255, 255, 255, ${0.92 * beamFade})`);
+        coreGrad.addColorStop(1, `rgba(0, 240, 255, ${0.15 * beamFade})`);
+        ctx.fillStyle = coreGrad;
+        ctx.fillRect(centerX - coreWidth, 0, coreWidth * 2, height);
+
+        // 4. Internal Wavy Sinusoidal Energy Filaments (6 twisting plasma ribbons)
+        for (let r = 0; r < 6; r++) {
+          ctx.beginPath();
+          ctx.strokeStyle =
+            r % 2 === 0
+              ? `rgba(255, 255, 255, ${0.88 * beamFade})`
+              : `rgba(56, 220, 255, ${0.78 * beamFade})`;
+          ctx.lineWidth = (3 + (r % 3) * 2) * beamFade;
+          for (let y = 0; y <= height; y += 16) {
+            const xOff = Math.sin(y * 0.015 + frame * 0.22 + r * 1.2) * (18 + r * 5);
+            if (y === 0) ctx.moveTo(centerX + xOff, y);
+            else ctx.lineTo(centerX + xOff, y);
           }
-          lightningArcs.push({
-            segments,
-            color: Math.random() > 0.35 ? '#ffffff' : '#00f0ff',
+          ctx.stroke();
+        }
+
+        // 5. Supersonic Compression Shockwave Rings Travelling Down the Beam
+        if (frame % 4 === 0 && shockRings.length < 16) {
+          shockRings.push({
+            y: -20,
+            speed: Math.random() * 8 + 26,
+            width: coreWidth * (1.8 + Math.random() * 0.6),
+            alpha: 1.0,
           });
         }
-      }
-      lightningArcs.forEach((arc) => {
-        ctx.beginPath();
-        ctx.strokeStyle = arc.color;
-        ctx.lineWidth = 2.2;
-        arc.segments.forEach((pt, idx) => {
-          if (idx === 0) ctx.moveTo(pt.x, pt.y);
-          else ctx.lineTo(pt.x, pt.y);
-        });
-        ctx.stroke();
-      });
+        for (let i = shockRings.length - 1; i >= 0; i--) {
+          const sr = shockRings[i];
+          sr.y += sr.speed;
+          sr.alpha -= 0.018;
+          if (sr.y > height || sr.alpha <= 0) {
+            shockRings.splice(i, 1);
+            continue;
+          }
+          ctx.beginPath();
+          ctx.ellipse(centerX, sr.y, sr.width, 10, 0, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(180, 250, 255, ${sr.alpha * 0.85 * beamFade})`;
+          ctx.lineWidth = 3.5;
+          ctx.stroke();
+        }
 
-      // 7. Ground Impact Core & Radiating Shockwave Wash
-      const impactY = height;
-      const impactRad = 190 + Math.sin(frame * 0.25) * 35 + Math.random() * 20;
-      const groundGrad = ctx.createRadialGradient(centerX, impactY, 20, centerX, impactY, impactRad * 2);
-      groundGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
-      groundGrad.addColorStop(0.25, 'rgba(0, 240, 255, 0.95)');
-      groundGrad.addColorStop(0.55, 'rgba(0, 100, 255, 0.55)');
-      groundGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = groundGrad;
-      ctx.beginPath();
-      ctx.arc(centerX, impactY, impactRad * 2, Math.PI, 0);
-      ctx.fill();
+        // 6. Branching Lightning Tendrils (Snaking violently along the beam)
+        if (frame % 2 === 0) {
+          lightningArcs = [];
+          const numArcs = Math.floor(Math.random() * 4) + 3;
+          for (let a = 0; a < numArcs; a++) {
+            const startY = Math.random() * height;
+            const isLeft = Math.random() > 0.5;
+            const startX = centerX + (isLeft ? -coreWidth : coreWidth);
+            const segments: { x: number; y: number }[] = [{ x: startX, y: startY }];
+            let curX = startX;
+            let curY = startY;
+            const steps = Math.floor(Math.random() * 5) + 4;
+            for (let s = 0; s < steps; s++) {
+              curX += (isLeft ? -1 : 1) * (Math.random() * 38 + 16);
+              curY += (Math.random() - 0.5) * 45;
+              segments.push({ x: curX, y: curY });
+            }
+            lightningArcs.push({
+              segments,
+              color: Math.random() > 0.35 ? '#ffffff' : '#00f0ff',
+            });
+          }
+        }
+        lightningArcs.forEach((arc) => {
+          ctx.beginPath();
+          ctx.strokeStyle = arc.color;
+          ctx.lineWidth = 2.2 * beamFade;
+          arc.segments.forEach((pt, idx) => {
+            if (idx === 0) ctx.moveTo(pt.x, pt.y);
+            else ctx.lineTo(pt.x, pt.y);
+          });
+          ctx.stroke();
+        });
+
+        // 7. Ground Impact Core & Radiating Shockwave Wash
+        const impactRad = (190 + Math.sin(frame * 0.25) * 35 + Math.random() * 20) * beamFade;
+        const groundGrad = ctx.createRadialGradient(centerX, impactY, 20, centerX, impactY, impactRad * 2);
+        groundGrad.addColorStop(0, `rgba(255, 255, 255, ${1 * beamFade})`);
+        groundGrad.addColorStop(0.25, `rgba(0, 240, 255, ${0.95 * beamFade})`);
+        groundGrad.addColorStop(0.55, `rgba(0, 100, 255, ${0.55 * beamFade})`);
+        groundGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = groundGrad;
+        ctx.beginPath();
+        ctx.arc(centerX, impactY, impactRad * 2, Math.PI, 0);
+        ctx.fill();
+
+        ctx.restore();
+      }
 
       // 8. Erupting Atomic Plasma Sparks & Embers Geyser
-      if (sparks.length < 95) {
+      if (elapsed < 3400 && sparks.length < 95) {
         for (let k = 0; k < 6; k++) {
           sparks.push({
-            x: centerX + (Math.random() - 0.5) * (coreWidth * 2.2),
+            x: centerX + (Math.random() - 0.5) * Math.max(30, coreWidth * 2.2),
             y: impactY - Math.random() * 20,
             vx: (Math.random() - 0.5) * 24,
             vy: -(Math.random() * 18 + 7),
@@ -526,6 +737,8 @@ export const SupernovaBrokenScreen: React.FC<SupernovaBrokenScreenProps> = ({
           });
         }
       }
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
       for (let s = sparks.length - 1; s >= 0; s--) {
         const sp = sparks[s];
         sp.x += sp.vx;
@@ -539,16 +752,38 @@ export const SupernovaBrokenScreen: React.FC<SupernovaBrokenScreenProps> = ({
         ctx.beginPath();
         ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
         ctx.fillStyle = sp.color;
+        ctx.globalAlpha = Math.max(0, sp.alpha);
         ctx.fill();
       }
-
       ctx.restore();
 
-      // Continuous violent screen tremor during the roar
-      setShake({
-        x: (Math.random() - 0.5) * 16,
-        y: (Math.random() - 0.5) * 14,
-      });
+      // =========================================================================
+      // 3. SEISMIC VIEWPORT CAMERA TREMOR & ROTATIONAL SHAKE
+      // =========================================================================
+      let curShakeX = 0;
+      let curShakeY = 0;
+      let curShakeR = 0;
+
+      if (elapsed < 350) {
+        // Initial violent impact slam: massive jolt & rotational recoil
+        curShakeX = (Math.random() - 0.5) * 36;
+        curShakeY = (Math.random() - 0.5) * 30;
+        curShakeR = (Math.random() - 0.5) * 1.4;
+      } else if (elapsed < 3100) {
+        // Sustained atomic roar: continuous heavy tremor
+        curShakeX = (Math.random() - 0.5) * 16;
+        curShakeY = (Math.random() - 0.5) * 14;
+        curShakeR = (Math.random() - 0.5) * 0.55;
+      } else if (elapsed < 3700) {
+        // Post-beam tremor decay
+        const decay = Math.max(0, 1 - (elapsed - 3100) / 600);
+        curShakeX = (Math.random() - 0.5) * 14 * decay;
+        curShakeY = (Math.random() - 0.5) * 12 * decay;
+        curShakeR = (Math.random() - 0.5) * 0.4 * decay;
+      }
+
+      setShake({ x: curShakeX, y: curShakeY });
+      onShake?.({ x: curShakeX, y: curShakeY, rotate: curShakeR });
     };
 
     render();
@@ -556,16 +791,18 @@ export const SupernovaBrokenScreen: React.FC<SupernovaBrokenScreenProps> = ({
     return () => {
       cancelAnimationFrame(animId);
       setShake({ x: 0, y: 0 });
+      onShake?.({ x: 0, y: 0, rotate: 0 });
     };
-  }, [phase]);
+  }, [phase, onShake]);
 
   // =========================================================================
   // RESET WORLD -> GODZILLA REBIRTH SEQUENCE
   // Waveform Analysis (at 2x speed):
   //   0.0s - 2.95s: Iconic nuclear charging hum (Dorsal fin spines glow)
   //   2.95s: Silent breath dip
-  //   3.0s - 6.4s: Full Animated Godzilla Atomic Energy Beam Strike & Roar!
-  //   6.4s: Beam thins into sparks, world restored smoothly!
+  //   3.0s - 6.2s: Full Animated Godzilla Atomic Energy Beam Strike & Roar!
+  //   6.2s (3200ms of beam): Beam finishes, atomic text assembly starts!
+  //   6.2s - 8.0s (5000ms of striking): Gaseous fumes roll, rise, and dissipate smoothly!
   // =========================================================================
   const handleResetWorld = () => {
     playGodzillaAudio();
@@ -577,11 +814,16 @@ export const SupernovaBrokenScreen: React.FC<SupernovaBrokenScreenProps> = ({
       setIsBlindingFlash(true);
       setTimeout(() => setIsBlindingFlash(false), 450);
 
-      // 2. Beam fires and roars continuously from 2.95s to 6.4s at 2x speed
+      // 2. Beam fires for 3200ms. At 3200ms, start atomic particle assembly of text!
+      setTimeout(() => {
+        onStartAssembly?.();
+      }, 3200);
+
+      // 3. Gaseous fumes continue rolling, rising, and softly dispersing until 5000ms
       setTimeout(() => {
         setPhase('done');
         onResetComplete();
-      }, 3450);
+      }, 5000);
     }, 2950);
   };
 
