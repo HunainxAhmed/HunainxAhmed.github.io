@@ -3,6 +3,9 @@ import { motion } from 'framer-motion';
 import { SectionHeading } from '@/components/common/SectionHeading';
 import { Film, Gamepad2, Terminal, Compass } from 'lucide-react';
 import { DragonBallBeamClash } from '@/components/effects/DragonBallBeamClash';
+import { RetroGamingConsole } from '@/components/effects/RetroGamingConsole';
+import { NeuralAgentSandbox } from '@/components/effects/NeuralAgentSandbox';
+import { ToolingArchaeologyTerminal } from '@/components/effects/ToolingArchaeologyTerminal';
 
 export const Hobbies: React.FC = () => {
   return (
@@ -116,8 +119,9 @@ export const Hobbies: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-8 pt-4 border-t border-white/[0.06] text-xs font-mono text-titanium-500">
-              Interactive combat vignette upcoming
+            {/* Interactive Retro Handheld Console & 8-Bit Mini-Game */}
+            <div className="mt-8 pt-6 border-t border-white/[0.06] flex flex-col items-center justify-center">
+              <RetroGamingConsole />
             </div>
           </motion.div>
 
@@ -166,8 +170,9 @@ export const Hobbies: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-8 pt-4 border-t border-white/[0.06] text-xs font-mono text-titanium-500">
-              Active late-night research &amp; prototyping sandbox
+            {/* Interactive Neural Agent Swarm & Synapse Sandbox */}
+            <div className="mt-8 pt-6 border-t border-white/[0.06] flex flex-col items-center justify-center">
+              <NeuralAgentSandbox />
             </div>
           </motion.div>
 
@@ -216,8 +221,9 @@ export const Hobbies: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-8 pt-4 border-t border-white/[0.06] text-xs font-mono text-titanium-500">
-              Constantly upgrading ergonomics &amp; engineering velocity
+            {/* Interactive Archaeology Terminal & Neovim Sandbox */}
+            <div className="mt-8 pt-6 border-t border-white/[0.06] flex flex-col items-center justify-center">
+              <ToolingArchaeologyTerminal />
             </div>
           </motion.div>
         </div>
